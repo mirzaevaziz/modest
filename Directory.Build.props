@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+        <RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+        <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+        
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
+        <AnalysisLevel>latest-Recommended</AnalysisLevel>
+        <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+        <IsPublishable>false</IsPublishable>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+        <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+        <NuGetAudit>false</NuGetAudit>
+
+        <VersionSuffix></VersionSuffix>
+    </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);EXTEXP0018</NoWarn>
+</PropertyGroup>
+  
+</Project>

@@ -1,0 +1,200 @@
+using FluentValidation;
+using Modest.Core.Common;
+using Modest.Core.Data;
+using Modest.Core.Helpers;
+
+namespace Modest.Core.Features.References.Product;
+
+public interface IProductService
+{
+    Task<PaginatedResult<ProductDto>> GetAllProductsAsync(
+        PaginatedRequest<ProductFilter> request,
+        IEnumerable<SortField>? sortFields
+    );
+    Task<PaginatedResult<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResult<string>> GetManufacturerLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResult<string>> GetCountryLookupDtosAsync(PaginatedRequest<string> request);
+    Task<ProductDto?> GetProductByIdAsync(Guid id);
+    Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto);
+    Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto);
+    Task<bool> DeleteProductAsync(Guid id);
+}
+
+public class ProductService(ModestDbContext modestDbContext, IServiceProvider serviceProvider)
+    : IProductService
+{
+    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
+    {
+        var entity = await modestDbContext.Products.FindAsync(id);
+        if (entity == null || entity.IsDeleted)
+        {
+            return null;
+        }
+
+        return entity.ToProductDto();
+    }
+
+    public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(
+        PaginatedRequest<ProductFilter> request,
+        IEnumerable<SortField>? sortFields
+    )
+    {
+        var query = modestDbContext.Products.AsQueryable();
+        if (request.Filter is not null)
+        {
+            if (request.Filter.ShowDeleted.HasValue)
+            {
+                query = query.Where(w => w.IsDeleted == !request.Filter.ShowDeleted.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Filter.SearchText))
+            {
+                query = query.Where(w => w.FullName.Contains(request.Filter.SearchText));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Filter.Manufacturer))
+            {
+                query = query.Where(w => w.Manufacturer == request.Filter.Manufacturer);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Filter.Country))
+            {
+                query = query.Where(w => w.Country == request.Filter.Country);
+            }
+        }
+
+        //TODO: Need To receive sort field and direction
+        query = query.OrderBy(o => o.FullName);
+
+        return await PaginationHelper.PaginateAsync(
+            query,
+            s => new ProductDto(
+                s.Id,
+                s.IsDeleted,
+                s.CreatedAt,
+                s.UpdatedAt,
+                s.DeletedAt,
+                s.FullName,
+                s.Name,
+                s.Manufacturer,
+                s.Country
+            ),
+            request.PageNumber,
+            request.PageSize,
+            sortFields ?? [new SortField("FullName", true)]
+        );
+    }
+
+    public async Task<PaginatedResult<LookupDto>> GetProductLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var query = modestDbContext.Products.Where(w => w.IsDeleted == false);
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            query = query.Where(w => w.FullName.Contains(request.Filter));
+        }
+
+        return await PaginationHelper.PaginateAsync(
+            query,
+            s => new LookupDto(s.Id, s.FullName),
+            request.PageNumber,
+            request.PageSize,
+            [new SortField("FullName", true)]
+        );
+    }
+
+    public async Task<PaginatedResult<string>> GetManufacturerLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var query = modestDbContext.Products.Where(w =>
+            w.IsDeleted == false && w.Manufacturer != null && w.Manufacturer.Length > 0
+        );
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            query = query.Where(w => w.Manufacturer!.Contains(request.Filter));
+        }
+
+        // Select only manufacturer names and make them distinct
+        var distinctQuery = query.Select(w => w.Manufacturer!).Distinct().OrderBy(o => o);
+
+        return await PaginationHelper.PaginateAsync(
+            distinctQuery,
+            s => s,
+            request.PageNumber,
+            request.PageSize,
+            [] // No sorting field for simple string list
+        );
+    }
+
+    public async Task<PaginatedResult<string>> GetCountryLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var query = modestDbContext.Products.Where(w =>
+            w.IsDeleted == false && w.Country != null && w.Country.Length > 0
+        );
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            query = query.Where(w => w.Country!.Contains(request.Filter));
+        }
+
+        // Select only Country names and make them distinct
+        var distinctQuery = query.Select(w => w.Country!).Distinct().OrderBy(o => o);
+
+        return await PaginationHelper.PaginateAsync(
+            distinctQuery,
+            s => s,
+            request.PageNumber,
+            request.PageSize,
+            [] // No sorting field for simple string list
+        );
+    }
+
+    public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto)
+    {
+        ValidationHelper.ValidateAndThrow(productCreateDto, serviceProvider);
+
+        var entity = new ProductEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = productCreateDto.Name,
+            Manufacturer = productCreateDto.Manufacturer,
+            Country = productCreateDto.Country,
+        };
+        modestDbContext.Products.Add(entity);
+        await modestDbContext.SaveChangesAsync();
+        return entity.ToProductDto();
+    }
+
+    public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
+    {
+        ValidationHelper.ValidateAndThrow(productUpdateDto, serviceProvider);
+
+        var entity = await modestDbContext.Products.FindAsync(productUpdateDto.Id);
+        if (entity == null || entity.IsDeleted)
+        {
+            throw new ProductNotFoundException(productUpdateDto.Id);
+        }
+
+        entity.Name = productUpdateDto.Name;
+        entity.Manufacturer = productUpdateDto.Manufacturer;
+        entity.Country = productUpdateDto.Country;
+        await modestDbContext.SaveChangesAsync();
+
+        return entity.ToProductDto();
+    }
+
+    public async Task<bool> DeleteProductAsync(Guid id)
+    {
+        var entity = await modestDbContext.Products.FindAsync(id);
+        if (entity == null || entity.IsDeleted)
+        {
+            return false;
+        }
+
+        modestDbContext.Products.Remove(entity);
+        return await modestDbContext.SaveChangesAsync() > 0;
+    }
+}
