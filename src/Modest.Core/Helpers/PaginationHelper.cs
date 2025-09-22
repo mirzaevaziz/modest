@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 
 namespace Modest.Core.Helpers;
 
@@ -16,12 +16,12 @@ public class PaginationHelper
     /// <param name="pageNumber">The current page number (1-based).</param>
     /// <param name="pageSize">The number of items per page.</param>
     /// <returns>A paginated result containing the DTOs and total count.</returns>
-    public static async Task<PaginatedResult<TDto>> PaginateAsync<TEntity, TDto>(
+    public static async Task<PaginatedResponse<TDto>> PaginateAsync<TEntity, TDto>(
         IQueryable<TEntity> query,
         Expression<Func<TEntity, TDto>> selector,
         int pageNumber,
         int pageSize,
-        IEnumerable<SortField> sortFields
+        IEnumerable<SortFieldRequest> sortFields
     )
         where TEntity : class
     {
@@ -48,7 +48,7 @@ public class PaginationHelper
             .ToListAsync();
 
         // Return paginated result
-        return new PaginatedResult<TDto>
+        return new PaginatedResponse<TDto>
         {
             Items = items,
             TotalCount = totalCount,

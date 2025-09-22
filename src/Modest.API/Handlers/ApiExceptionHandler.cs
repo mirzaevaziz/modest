@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
-using Modest.Core.Common;
+using Modest.Core.Common.Exceptions;
 
 namespace Modest.API.Handlers;
 

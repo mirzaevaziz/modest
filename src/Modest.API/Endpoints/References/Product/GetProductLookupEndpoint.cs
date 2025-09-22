@@ -1,11 +1,11 @@
 using FastEndpoints;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetProductLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResult<LookupDto>>
+    : Endpoint<PaginatedRequest<string>, PaginatedResponse<LookupDto>>
 {
     public override void Configure()
     {

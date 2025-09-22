@@ -1,5 +1,5 @@
 using FastEndpoints;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
@@ -37,6 +37,6 @@ public class GetAllProductsEndpoint(IProductService service)
         public ProductFilter? Filter { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
-        public List<SortField>? SortFields { get; set; }
+        public List<SortFieldRequest>? SortFields { get; set; }
     }
 }

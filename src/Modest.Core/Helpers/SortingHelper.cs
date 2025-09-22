@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 
 namespace Modest.Core.Helpers;
 
@@ -14,10 +14,10 @@ public static class SortingHelper
     /// <returns>The query with sorting applied.</returns>
     public static IQueryable<TEntity> ApplySorting<TEntity>(
         IQueryable<TEntity> query,
-        SortField sortField
+        SortFieldRequest sortField
     )
     {
-        return ApplyMultipleSorting(query, new List<SortField> { sortField });
+        return ApplyMultipleSorting(query, new List<SortFieldRequest> { sortField });
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public static class SortingHelper
     /// <returns>The query with sorting applied.</returns>
     public static IQueryable<TEntity> ApplyMultipleSorting<TEntity>(
         IQueryable<TEntity> query,
-        IEnumerable<SortField> sortFields
+        IEnumerable<SortFieldRequest> sortFields
     )
     {
         if (sortFields == null || !sortFields.Any())

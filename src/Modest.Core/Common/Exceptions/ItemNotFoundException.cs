@@ -1,4 +1,4 @@
-namespace Modest.Core.Common;
+namespace Modest.Core.Common.Exceptions;
 
 public class ItemNotFoundException : Exception
 {

@@ -1,5 +1,5 @@
 using FluentValidation;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 using Modest.Core.Data;
 using Modest.Core.Helpers;
 
@@ -7,13 +7,15 @@ namespace Modest.Core.Features.References.Product;
 
 public interface IProductService
 {
-    Task<PaginatedResult<ProductDto>> GetAllProductsAsync(
+    Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
         PaginatedRequest<ProductFilter> request,
-        IEnumerable<SortField>? sortFields
+        IEnumerable<SortFieldRequest>? sortFields
     );
-    Task<PaginatedResult<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
-    Task<PaginatedResult<string>> GetManufacturerLookupDtosAsync(PaginatedRequest<string> request);
-    Task<PaginatedResult<string>> GetCountryLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+        PaginatedRequest<string> request
+    );
+    Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(PaginatedRequest<string> request);
     Task<ProductDto?> GetProductByIdAsync(Guid id);
     Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto);
     Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto);
@@ -34,9 +36,9 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
         return entity.ToProductDto();
     }
 
-    public async Task<PaginatedResult<ProductDto>> GetAllProductsAsync(
+    public async Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
         PaginatedRequest<ProductFilter> request,
-        IEnumerable<SortField>? sortFields
+        IEnumerable<SortFieldRequest>? sortFields
     )
     {
         var query = modestDbContext.Products.AsQueryable();
@@ -81,11 +83,11 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
             ),
             request.PageNumber,
             request.PageSize,
-            sortFields ?? [new SortField("FullName", true)]
+            sortFields ?? [new SortFieldRequest("FullName", true)]
         );
     }
 
-    public async Task<PaginatedResult<LookupDto>> GetProductLookupDtosAsync(
+    public async Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
@@ -100,11 +102,11 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
             s => new LookupDto(s.Id, s.FullName),
             request.PageNumber,
             request.PageSize,
-            [new SortField("FullName", true)]
+            [new SortFieldRequest("FullName", true)]
         );
     }
 
-    public async Task<PaginatedResult<string>> GetManufacturerLookupDtosAsync(
+    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
@@ -128,7 +130,7 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
         );
     }
 
-    public async Task<PaginatedResult<string>> GetCountryLookupDtosAsync(
+    public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {

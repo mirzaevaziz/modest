@@ -1,4 +1,4 @@
-using Modest.Core.Common;
+using Modest.Core.Common.Exceptions;
 
 namespace Modest.Core.Features.References.Product;
 

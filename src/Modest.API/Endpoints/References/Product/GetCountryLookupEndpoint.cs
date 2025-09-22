@@ -1,11 +1,11 @@
 using FastEndpoints;
-using Modest.Core.Common;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetCountryLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResult<string>>
+    : Endpoint<PaginatedRequest<string>, PaginatedResponse<string>>
 {
     public override void Configure()
     {
