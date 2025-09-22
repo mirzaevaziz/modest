@@ -13,5 +13,4 @@
     <PackageReference Include="MongoDB.EntityFrameworkCore" />
     <PackageReference Include="Serilog" />
   </ItemGroup>
-
 </Project>

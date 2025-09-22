@@ -8,7 +8,7 @@ public class DeleteProductEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Delete("/products/{id:guid}");
+        Delete("/references/products/{id:guid}");
         AllowAnonymous();
         Summary(s =>
         {

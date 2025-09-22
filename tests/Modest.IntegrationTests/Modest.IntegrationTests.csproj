@@ -5,17 +5,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-  </PropertyGroup>
-
+  <AssemblyName>Modest.IntegrationTests</AssemblyName>
+</PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
-    <PackageReference Include="xunit"  />
-    <PackageReference Include="xunit.runner.visualstudio" />
+  <PackageReference Include="coverlet.collector" />
+  <PackageReference Include="FluentAssertions" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  <PackageReference Include="Testcontainers.MongoDb" />
+  <PackageReference Include="xunit" />
+  <PackageReference Include="xunit.runner.visualstudio" />
+  <PackageReference Include="Testcontainers" />
+  <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  <PackageReference Include="MongoDB.Driver" />
+  <PackageReference Include="Alba" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="../../src/Modest.API/Modest.API.csproj" />
   </ItemGroup>
 
 </Project>

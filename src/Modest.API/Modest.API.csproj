@@ -20,4 +20,8 @@
     <ProjectReference Include="../Modest.Core/Modest.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Modest.IntegrationTests" />
+  </ItemGroup>
+  
 </Project>

@@ -9,7 +9,7 @@ public class GetProductLookupEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Get("/products/lookup");
+        Get("/references/products/lookup");
         AllowAnonymous();
         Summary(s =>
         {

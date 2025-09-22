@@ -9,7 +9,7 @@ public class GetCountryLookupEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Get("/products/countries");
+        Get("/references/products/countries");
         AllowAnonymous();
         Summary(s =>
         {

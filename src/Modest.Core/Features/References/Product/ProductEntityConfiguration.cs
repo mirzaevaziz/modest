@@ -11,11 +11,12 @@ public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity
         builder.HasKey(p => p.Id);
 
         // Property configurations
-
         builder.Property(p => p.Name).IsRequired().HasMaxLength(ProductConstants.NameMaxLength);
-        builder.Property(p => p.Manufacturer).HasMaxLength(ProductConstants.ManufacturerMaxLength);
         builder.Property(p => p.Country).HasMaxLength(ProductConstants.CountryMaxLength);
+        builder.Property(p => p.Manufacturer).HasMaxLength(ProductConstants.ManufacturerMaxLength);
 
+        // Unique index on FullName
+        builder.HasIndex(p => p.FullName).IsUnique();
         builder.Property(p => p.FullName).IsRequired();
 
         // Auditing (optional: map common timestamps)

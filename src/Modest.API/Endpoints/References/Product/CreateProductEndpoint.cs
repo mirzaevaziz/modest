@@ -7,7 +7,7 @@ public class CreateProductEndpoint(IProductService service) : Endpoint<ProductCr
 {
     public override void Configure()
     {
-        Post("/products");
+        Post("/references/products");
         AllowAnonymous();
         Summary(s =>
         {

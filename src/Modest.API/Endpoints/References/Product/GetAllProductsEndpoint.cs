@@ -9,7 +9,7 @@ public class GetAllProductsEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Get("/products");
+        Get("/references/products");
         AllowAnonymous();
         Summary(s =>
         {

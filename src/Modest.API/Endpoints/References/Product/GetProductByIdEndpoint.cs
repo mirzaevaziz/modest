@@ -8,7 +8,7 @@ public class GetProductByIdEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Get("/products/{id:guid}");
+        Get("/references/products/{id:guid}");
         AllowAnonymous();
         Summary(s =>
         {

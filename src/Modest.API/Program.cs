@@ -51,7 +51,10 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 // Use FastEndpoints and Swagger
-app.UseFastEndpoints();
+app.UseFastEndpoints(c =>
+{
+    c.Endpoints.RoutePrefix = "api";
+});
 app.UseSwaggerGen();
 
 // Configure the HTTP request pipeline.
@@ -65,3 +68,5 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 
 app.Run();
+
+public partial class Program { }

@@ -7,7 +7,7 @@ public class UpdateProductEndpoint(IProductService service) : Endpoint<ProductUp
 {
     public override void Configure()
     {
-        Put("/products");
+        Put("/references/products");
         AllowAnonymous();
         Summary(s =>
         {

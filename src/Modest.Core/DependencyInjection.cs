@@ -15,24 +15,26 @@ public static class DependencyInjection
         var settings =
             builder.Configuration.GetSection("MongoDBSettings").Get<MongoDbSettings>()
             ?? throw new InvalidOperationException("MongoDbSetting is not provided.");
-        if (
-            string.IsNullOrWhiteSpace(settings.ConnectionString)
-            || string.IsNullOrWhiteSpace(settings.DatabaseName)
-        )
-        {
-            throw new InvalidOperationException("MongoDbSetting values are not provided.");
-        }
 
-        builder.Services.AddDbContext<ModestDbContext>(options =>
+        if (!builder.Environment.IsEnvironment("IntegrationTest"))
         {
-            options.UseMongoDB(settings.ConnectionString, settings.DatabaseName);
-            // Enable EF Core query logging
-            // options.UseLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()));
-        });
+            if (
+                string.IsNullOrWhiteSpace(settings.ConnectionString)
+                || string.IsNullOrWhiteSpace(settings.DatabaseName)
+            )
+            {
+                throw new InvalidOperationException("MongoDbSetting values are not provided.");
+            }
+
+            builder.Services.AddDbContext<ModestDbContext>(options =>
+            {
+                options.UseMongoDB(settings.ConnectionString, settings.DatabaseName);
+            });
+        }
 
         builder.Services.AddScoped<IProductService, ProductService>();
 
-        // Register validators from the current assembly (FastEndpoints project)
+        // Register validators from the current assembly
         builder.Services.AddValidatorsFromAssemblyContaining<ModestDbContext>();
     }
 }

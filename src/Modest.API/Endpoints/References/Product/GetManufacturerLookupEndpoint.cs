@@ -9,7 +9,7 @@ public class GetManufacturerLookupEndpoint(IProductService service)
 {
     public override void Configure()
     {
-        Get("/products/manufacturers");
+        Get("/references/products/manufacturers");
         AllowAnonymous();
         Summary(s =>
         {

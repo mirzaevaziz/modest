@@ -10,7 +10,15 @@ public class ProductUpdateDtoValidator : AbstractValidator<ProductUpdateDto>
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MinimumLength(NameMinLength).MaximumLength(NameMaxLength);
-        RuleFor(x => x.Manufacturer).NotEmpty().MaximumLength(ManufacturerMaxLength);
-        RuleFor(x => x.Country).NotEmpty().MaximumLength(CountryMaxLength);
+
+        RuleFor(x => x.Manufacturer)
+            .NotEmpty()
+            .MaximumLength(ManufacturerMaxLength)
+            .When(x => !string.IsNullOrEmpty(x.Manufacturer));
+
+        RuleFor(x => x.Country)
+            .NotEmpty()
+            .MaximumLength(CountryMaxLength)
+            .When(x => !string.IsNullOrEmpty(x.Country));
     }
 }
