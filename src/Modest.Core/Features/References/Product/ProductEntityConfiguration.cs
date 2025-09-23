@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MongoDB.EntityFrameworkCore.Extensions;
 
 namespace Modest.Core.Features.References.Product;
 
@@ -7,13 +8,20 @@ public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity
 {
     public void Configure(EntityTypeBuilder<ProductEntity> builder)
     {
+        builder.ToCollection<ProductEntity>("Products");
         // Configure the primary key
         builder.HasKey(p => p.Id);
 
         // Property configurations
         builder.Property(p => p.Name).IsRequired().HasMaxLength(ProductConstants.NameMaxLength);
-        builder.Property(p => p.Country).HasMaxLength(ProductConstants.CountryMaxLength);
-        builder.Property(p => p.Manufacturer).HasMaxLength(ProductConstants.ManufacturerMaxLength);
+        builder
+            .Property(p => p.Country)
+            .IsRequired()
+            .HasMaxLength(ProductConstants.CountryMaxLength);
+        builder
+            .Property(p => p.Manufacturer)
+            .IsRequired()
+            .HasMaxLength(ProductConstants.ManufacturerMaxLength);
 
         // Unique index on FullName
         builder.HasIndex(p => p.FullName).IsUnique();

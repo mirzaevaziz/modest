@@ -9,6 +9,7 @@ public class ProductEntity : AuditableEntity
         get { return $"{Name}({Manufacturer}/{Country})"; }
         set { }
     }
+
     public required string Name { get; set; }
     public string? Manufacturer { get; set; }
     public string? Country { get; set; }

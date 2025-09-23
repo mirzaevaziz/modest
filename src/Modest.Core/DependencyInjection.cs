@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Modest.Core.Data;
 using Modest.Core.Features.References.Product;
+using Modest.Core.Helpers;
 
 namespace Modest.Core;
 
@@ -30,6 +31,11 @@ public static class DependencyInjection
             {
                 options.UseMongoDB(settings.ConnectionString, settings.DatabaseName);
             });
+
+            MongoDbIndexesHelper.EnsureCreatingIndexes(
+                settings.ConnectionString,
+                settings.DatabaseName
+            );
         }
 
         builder.Services.AddScoped<IProductService, ProductService>();

@@ -11,6 +11,8 @@ namespace Modest.IntegrationTests;
 
 public class WebFixture : IAsyncLifetime, IDisposable
 {
+    private const string DatabaseName = "ModestTestDb";
+
     public IContainer MongoDbContainer { get; private set; } = default!;
     public string ConnectionString { get; private set; } = default!;
     public Alba.IAlbaHost AlbaHost { get; private set; } = default!;
@@ -49,8 +51,13 @@ public class WebFixture : IAsyncLifetime, IDisposable
                 // services.Remove(services.First(s => s.ServiceType == typeof(ModestDbContext)));
                 services.AddDbContext<ModestDbContext>(options =>
                 {
-                    options.UseMongoDB(ConnectionString, "ModestTestDb");
+                    options.UseMongoDB(ConnectionString, DatabaseName);
                 });
+
+                Core.Helpers.MongoDbIndexesHelper.EnsureCreatingIndexes(
+                    ConnectionString,
+                    DatabaseName
+                );
             });
         });
         await AlbaHost.StartAsync();
@@ -73,6 +80,7 @@ public class WebFixture : IAsyncLifetime, IDisposable
     public void Dispose()
     {
         DisposeAsync().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
     }
 }
 

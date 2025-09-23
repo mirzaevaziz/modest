@@ -1,7 +1,9 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Modest.Core.Common.Models;
 using Modest.Core.Data;
 using Modest.Core.Helpers;
+using MongoDB.Driver;
 
 namespace Modest.Core.Features.References.Product;
 
@@ -165,8 +167,28 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
             Manufacturer = productCreateDto.Manufacturer,
             Country = productCreateDto.Country,
         };
-        modestDbContext.Products.Add(entity);
+        var duplicate = await modestDbContext.Products.FirstOrDefaultAsync(p =>
+            p.FullName == entity.FullName
+        );
+        if (duplicate is not null)
+        {
+            if (duplicate.IsDeleted)
+            {
+                duplicate.IsDeleted = false;
+                entity = duplicate;
+            }
+            else
+            {
+                throw new ValidationException($"Product with the same FullName already exists.");
+            }
+        }
+        else
+        {
+            modestDbContext.Products.Add(entity);
+        }
+
         await modestDbContext.SaveChangesAsync();
+
         return entity.ToProductDto();
     }
 
@@ -183,6 +205,22 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
         entity.Name = productUpdateDto.Name;
         entity.Manufacturer = productUpdateDto.Manufacturer;
         entity.Country = productUpdateDto.Country;
+
+        var duplicate = await modestDbContext.Products.FirstOrDefaultAsync(p =>
+            p.FullName == entity.FullName
+        );
+        if (duplicate is not null && duplicate.Id != entity.Id)
+        {
+            if (duplicate.IsDeleted)
+            {
+                duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
+            }
+            else
+            {
+                throw new ValidationException($"Product with the same FullName already exists.");
+            }
+        }
+
         await modestDbContext.SaveChangesAsync();
 
         return entity.ToProductDto();
