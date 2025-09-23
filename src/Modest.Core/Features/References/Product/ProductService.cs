@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Modest.Core.Common.Models;
 using Modest.Core.Data;
 using Modest.Core.Helpers;
@@ -24,8 +25,11 @@ public interface IProductService
     Task<bool> DeleteProductAsync(Guid id);
 }
 
-public class ProductService(ModestDbContext modestDbContext, IServiceProvider serviceProvider)
-    : IProductService
+public class ProductService(
+    ModestDbContext modestDbContext,
+    IServiceProvider serviceProvider,
+    ILogger<ProductService> logger
+) : IProductService
 {
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
@@ -158,6 +162,13 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto)
     {
+        ProductServiceLog.CreatingProduct(
+            logger,
+            productCreateDto.Name,
+            productCreateDto.Manufacturer,
+            productCreateDto.Country,
+            null
+        );
         ValidationHelper.ValidateAndThrow(productCreateDto, serviceProvider);
 
         var entity = new ProductEntity
@@ -176,6 +187,12 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
             {
                 duplicate.IsDeleted = false;
                 entity = duplicate;
+                ProductServiceLog.UpdatedDuplicatedProduct(
+                    logger,
+                    duplicate.Id,
+                    duplicate.FullName,
+                    null
+                );
             }
             else
             {
@@ -189,11 +206,20 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
 
         await modestDbContext.SaveChangesAsync();
 
+        ProductServiceLog.ProductCreated(logger, entity.Id, entity.FullName, null);
         return entity.ToProductDto();
     }
 
     public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
     {
+        ProductServiceLog.UpdatingProduct(
+            logger,
+            productUpdateDto.Id,
+            productUpdateDto.Name,
+            productUpdateDto.Manufacturer,
+            productUpdateDto.Country,
+            null
+        );
         ValidationHelper.ValidateAndThrow(productUpdateDto, serviceProvider);
 
         var entity = await modestDbContext.Products.FindAsync(productUpdateDto.Id);
@@ -214,6 +240,12 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
             if (duplicate.IsDeleted)
             {
                 duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
+                ProductServiceLog.UpdatedDuplicatedProduct(
+                    logger,
+                    duplicate.Id,
+                    duplicate.FullName,
+                    null
+                );
             }
             else
             {
@@ -223,11 +255,13 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
 
         await modestDbContext.SaveChangesAsync();
 
+        ProductServiceLog.ProductUpdated(logger, entity.Id, entity.FullName, null);
         return entity.ToProductDto();
     }
 
     public async Task<bool> DeleteProductAsync(Guid id)
     {
+        ProductServiceLog.DeletingProduct(logger, id, null);
         var entity = await modestDbContext.Products.FindAsync(id);
         if (entity == null || entity.IsDeleted)
         {
@@ -235,6 +269,16 @@ public class ProductService(ModestDbContext modestDbContext, IServiceProvider se
         }
 
         modestDbContext.Products.Remove(entity);
-        return await modestDbContext.SaveChangesAsync() > 0;
+        var result = await modestDbContext.SaveChangesAsync() > 0;
+        if (result)
+        {
+            ProductServiceLog.ProductDeleted(logger, id, null);
+        }
+        else
+        {
+            ProductServiceLog.ProductDeleteFailed(logger, id, null);
+        }
+
+        return result;
     }
 }
