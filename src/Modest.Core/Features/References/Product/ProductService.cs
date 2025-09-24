@@ -71,9 +71,6 @@ public class ProductService(
             }
         }
 
-        //TODO: Need To receive sort field and direction
-        query = query.OrderBy(o => o.FullName);
-
         return await PaginationHelper.PaginateAsync(
             query,
             s => new ProductDto(
