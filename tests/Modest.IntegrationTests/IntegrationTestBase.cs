@@ -20,5 +20,6 @@ public abstract class IntegrationTestBase
         WebFixture = webFixture;
         // Drop the database before each test class instance
         webFixture.ResetDatabaseAsync().GetAwaiter().GetResult();
+        ModestDbContext.ChangeTracker.Clear();
     }
 }

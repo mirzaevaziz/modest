@@ -3,7 +3,7 @@ using FluentAssertions;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
-namespace Modest.IntegrationTests;
+namespace Modest.IntegrationTests.Endpoints.References.Products;
 
 public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     : IntegrationTestBase(mongoDbFixture)

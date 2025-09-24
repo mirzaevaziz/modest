@@ -8,7 +8,10 @@ public class ModestDbContext : DbContext
     public DbSet<ProductEntity> Products { get; init; }
 
     public ModestDbContext(DbContextOptions options)
-        : base(options) { }
+        : base(options)
+    {
+        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
