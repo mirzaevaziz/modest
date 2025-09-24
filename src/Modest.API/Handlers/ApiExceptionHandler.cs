@@ -44,7 +44,21 @@ public class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExcepti
                     .Errors.Select(e => new { e.PropertyName, e.ErrorMessage })
                     .ToArray();
                 var validationResult = JsonSerializer.Serialize(
-                    new { ErrorMessage = "Validation failed.", Errors = errors }
+                    new
+                    {
+                        ErrorMessage = "Validation failed.",
+                        Errors = errors
+                            .Concat(
+                                [
+                                    new
+                                    {
+                                        PropertyName = "Error",
+                                        ErrorMessage = validationException.Message,
+                                    },
+                                ]
+                            )
+                            .ToArray(),
+                    }
                 );
                 _validationLog(logger, errors, validationException);
                 await httpContext.Response.WriteAsync(validationResult, cancellationToken);

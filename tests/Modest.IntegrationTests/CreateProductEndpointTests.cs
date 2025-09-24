@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using Modest.Core.Features.References.Product;
 using Xunit;

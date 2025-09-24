@@ -5,12 +5,20 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Data;
+using MongoDB.Driver;
 using Xunit;
 
 namespace Modest.IntegrationTests;
 
 public class WebFixture : IAsyncLifetime, IDisposable
 {
+    // Drop the test database before each test
+    public async Task ResetDatabaseAsync()
+    {
+        var client = new MongoClient(ConnectionString);
+        await client.DropDatabaseAsync(DatabaseName);
+    }
+
     private const string DatabaseName = "ModestTestDb";
 
     public IContainer MongoDbContainer { get; private set; } = default!;
