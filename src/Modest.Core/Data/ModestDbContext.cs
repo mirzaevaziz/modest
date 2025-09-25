@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.Core.Data;

@@ -1,4 +1,4 @@
-using Modest.Core.Data;
+using Modest.Core.Common.Models;
 
 namespace Modest.Core.Features.References.Product;
 

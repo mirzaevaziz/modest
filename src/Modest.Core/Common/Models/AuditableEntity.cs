@@ -1,4 +1,4 @@
-namespace Modest.Core.Data;
+namespace Modest.Core.Common.Models;
 
 public abstract class AuditableEntity
 {
