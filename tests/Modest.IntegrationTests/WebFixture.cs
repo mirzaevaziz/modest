@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Modest.IntegrationTests;
 
-public class WebFixture : IAsyncLifetime, IDisposable
+public class WebFixture : IAsyncLifetime
 {
     // Drop the test database before each test
     public async Task ResetDatabaseAsync()
@@ -83,12 +83,6 @@ public class WebFixture : IAsyncLifetime, IDisposable
         {
             await AlbaHost.DisposeAsync();
         }
-    }
-
-    public void Dispose()
-    {
-        DisposeAsync().GetAwaiter().GetResult();
-        GC.SuppressFinalize(this);
     }
 }
 
