@@ -41,7 +41,7 @@ public class WebFixture : IAsyncLifetime
         ConnectionString =
             "mongodb://admin1:password1@localhost:" + MongoDbContainer.GetMappedPublicPort(27017);
 
-        AlbaHost = await Alba.AlbaHost.For<global::Program>(builder =>
+        AlbaHost = await Alba.AlbaHost.For<Program>(builder =>
         {
             builder.UseEnvironment("IntegrationTest");
             builder.ConfigureServices(services =>
@@ -61,11 +61,6 @@ public class WebFixture : IAsyncLifetime
                 {
                     options.UseMongoDB(ConnectionString, DatabaseName);
                 });
-
-                Core.Helpers.MongoDbIndexesHelper.EnsureCreatingIndexes(
-                    ConnectionString,
-                    DatabaseName
-                );
             });
         });
         await AlbaHost.StartAsync();

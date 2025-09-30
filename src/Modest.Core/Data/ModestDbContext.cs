@@ -12,6 +12,8 @@ public class ModestDbContext : DbContext
         : base(options)
     {
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
+
+        Database.EnsureCreated();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

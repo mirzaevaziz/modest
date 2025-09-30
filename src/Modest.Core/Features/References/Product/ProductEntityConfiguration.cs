@@ -6,9 +6,11 @@ namespace Modest.Core.Features.References.Product;
 
 public class ProductEntityConfiguration : IEntityTypeConfiguration<ProductEntity>
 {
+    public const string CollectionName = "Products";
+
     public void Configure(EntityTypeBuilder<ProductEntity> builder)
     {
-        builder.ToCollection<ProductEntity>("Products");
+        builder.ToCollection(CollectionName);
         // Configure the primary key
         builder.HasKey(p => p.Id);
 
