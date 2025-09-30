@@ -10,7 +10,6 @@
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="MongoDB.EntityFrameworkCore" />
     <PackageReference Include="Serilog" />
   </ItemGroup>
 </Project>

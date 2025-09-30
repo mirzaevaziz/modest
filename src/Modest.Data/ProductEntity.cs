@@ -1,6 +1,4 @@
-using Modest.Core.Common.Models;
-
-namespace Modest.Core.Features.References.Product;
+namespace Modest.Data;
 
 public class ProductEntity : AuditableEntity
 {

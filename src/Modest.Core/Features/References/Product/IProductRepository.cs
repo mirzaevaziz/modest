@@ -1,0 +1,20 @@
+using Modest.Core.Common.Models;
+
+namespace Modest.Core.Features.References.Product;
+
+public interface IProductRepository
+{
+    Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
+        PaginatedRequest<ProductFilter> request,
+        IEnumerable<SortFieldRequest>? sortFields
+    );
+    Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+        PaginatedRequest<string> request
+    );
+    Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(PaginatedRequest<string> request);
+    Task<ProductDto?> GetProductByIdAsync(Guid id);
+    Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto);
+    Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto);
+    Task<bool> DeleteProductAsync(Guid id);
+}
