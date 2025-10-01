@@ -10,4 +10,8 @@
     <ProjectReference Include="../Modest.Core/Modest.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" />
+  </ItemGroup>
+
 </Project>

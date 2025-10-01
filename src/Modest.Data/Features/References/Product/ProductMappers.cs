@@ -1,7 +1,7 @@
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
-namespace Modest.Data;
+namespace Modest.Data.Features.References.Product;
 
 public static class ProductMappers
 {

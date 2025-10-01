@@ -1,4 +1,4 @@
-namespace Modest.Data;
+namespace Modest.Data.Features.References.Product;
 
 public class ProductEntity : AuditableEntity
 {

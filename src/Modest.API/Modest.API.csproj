@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Modest.Core/Modest.Core.csproj" />
+    <ProjectReference Include="../Modest.Data/Modest.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

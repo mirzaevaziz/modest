@@ -5,6 +5,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Modest.API.Handlers;
 using Modest.Core;
+using Modest.Data;
 using Serilog;
 using Serilog.Events;
 
@@ -40,6 +41,7 @@ builder
 builder.Services.AddOpenApi();
 
 builder.AddCoreServices();
+builder.AddDataServices();
 
 // Register the API exception handler
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
