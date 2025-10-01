@@ -70,6 +70,20 @@ public class ProductRepository : IProductRepository
         entity.Manufacturer = productUpdateDto.Manufacturer;
         entity.Country = productUpdateDto.Country;
         entity.UpdatedAt = DateTime.UtcNow;
+        var duplicate = await _collection
+            .Find(x => x.FullName == entity.FullName)
+            .FirstOrDefaultAsync();
+        if (duplicate is not null && duplicate.Id != entity.Id)
+        {
+            if (!duplicate.IsDeleted)
+            {
+                throw new ValidationException($"Product with the same FullName already exists.");
+            }
+            // Undo delete (restore)
+            duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
+            await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
+        }
+
         await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return entity.ToProductDto();
     }
@@ -203,7 +217,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
-        var entity = await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+        var entity = await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
         return entity?.ToProductDto();
     }
 
