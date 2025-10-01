@@ -1,7 +1,7 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
-using Modest.Data;
 using Xunit;
 
 namespace Modest.IntegrationTests.Endpoints.References.Products;
@@ -83,32 +83,34 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
         });
     }
 
-    // [Fact]
-    // public async Task CreateProductReturnsOkAndProductAsync()
-    // {
-    //     // Arrange
-    //     var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
+    [Fact]
+    public async Task CreateProductReturnsOkAndProductAsync()
+    {
+        // Arrange
+        var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
 
-    //     // Act & Assert using Alba
-    //     var resp = await AlbaHost.Scenario(api =>
-    //     {
-    //         api.Post.Json(dto).ToUrl("/api/references/products");
-    //         api.StatusCodeShouldBe(HttpStatusCode.OK);
-    //     });
+        // Act & Assert using Alba
+        var resp = await AlbaHost.Scenario(api =>
+        {
+            api.Post.Json(dto).ToUrl("/api/references/products");
+            api.StatusCodeShouldBe(HttpStatusCode.OK);
+        });
 
-    //     var product = await resp.ReadAsJsonAsync<ProductDto>();
-    //     product.Should().NotBeNull();
-    //     product.Id.Should().NotBeEmpty();
-    //     product!.Name.Should().Be(dto.Name);
-    //     product.Manufacturer.Should().Be(dto.Manufacturer);
-    //     product.Country.Should().Be(dto.Country);
+        // Assert
+        var product = await resp.ReadAsJsonAsync<ProductDto>();
+        product.Should().NotBeNull();
+        product.Id.Should().NotBeEmpty();
+        product!.Name.Should().Be(dto.Name);
+        product.Manufacturer.Should().Be(dto.Manufacturer);
+        product.Country.Should().Be(dto.Country);
 
-    //     var productInDb = await productRepository.GetProductByIdAsync(product.Id);
-    //     productInDb.Should().NotBeNull();
-    //     productInDb!.Name.Should().Be(dto.Name);
-    //     productInDb.Manufacturer.Should().Be(dto.Manufacturer);
-    //     productInDb.Country.Should().Be(dto.Country);
-    // }
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var productInDb = await productRepository.GetProductByIdAsync(product.Id);
+        productInDb.Should().NotBeNull();
+        productInDb!.Name.Should().Be(dto.Name);
+        productInDb.Manufacturer.Should().Be(dto.Manufacturer);
+        productInDb.Country.Should().Be(dto.Country);
+    }
 
     [Fact]
     public async Task CreateProductDuplicateReturnsBadRequestAsync()
@@ -128,41 +130,36 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
         });
     }
 
-    // [Fact]
-    // public async Task CreateProductDeletedDuplicateReturnsOkAndProductAsync()
-    // {
-    //     // Arrange: Add a deleted entity directly via DbContext
-    //     var deletedEntity = new ProductDto
-    //     {
-    //         Id = Guid.NewGuid(),
-    //         Name = "Test Product",
-    //         Manufacturer = "TestMan",
-    //         Country = "TestLand",
-    //     };
-    //     await productRepository.CreateProductAsync(deletedEntity);
-    //     ModestDbContext.Products.Remove(deletedEntity);
-    //     await ModestDbContext.SaveChangesAsync();
+    [Fact]
+    public async Task CreateProductDeletedDuplicateReturnsOkAndProductAsync()
+    {
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
-    //     // Act: Create a duplicate via the API
-    //     var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
-    //     var resp = await AlbaHost.Scenario(api =>
-    //     {
-    //         api.Post.Json(dto).ToUrl("/api/references/products");
-    //         api.StatusCodeShouldBe(HttpStatusCode.OK);
-    //     });
+        // Arrange: Add a deleted entity directly via DbContext
+        var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
+        var entity = await productRepository.CreateProductAsync(dto);
+        await productRepository.DeleteProductAsync(entity.Id);
 
-    //     var product = await resp.ReadAsJsonAsync<ProductDto>();
-    //     product.Should().NotBeNull();
-    //     product.Id.Should().Be(deletedEntity.Id);
-    //     product!.Name.Should().Be(dto.Name);
-    //     product.Manufacturer.Should().Be(dto.Manufacturer);
-    //     product.Country.Should().Be(dto.Country);
+        // Act: Create a duplicate via the API
+        var resp = await AlbaHost.Scenario(api =>
+        {
+            api.Post.Json(dto).ToUrl("/api/references/products");
+            api.StatusCodeShouldBe(HttpStatusCode.OK);
+        });
 
-    //     var productInDb = await productRepository.GetProductByIdAsync(product.Id);
-    //     productInDb.Should().NotBeNull();
-    //     productInDb!.IsDeleted.Should().BeFalse();
-    //     productInDb.Name.Should().Be(dto.Name);
-    //     productInDb.Manufacturer.Should().Be(dto.Manufacturer);
-    //     productInDb.Country.Should().Be(dto.Country);
-    // }
+        // Assert
+        var product = await resp.ReadAsJsonAsync<ProductDto>();
+        product.Should().NotBeNull();
+        product.Id.Should().Be(entity.Id);
+        product!.Name.Should().Be(dto.Name);
+        product.Manufacturer.Should().Be(dto.Manufacturer);
+        product.Country.Should().Be(dto.Country);
+
+        var productInDb = await productRepository.GetProductByIdAsync(product.Id);
+        productInDb.Should().NotBeNull();
+        productInDb!.IsDeleted.Should().BeFalse();
+        productInDb.Name.Should().Be(dto.Name);
+        productInDb.Manufacturer.Should().Be(dto.Manufacturer);
+        productInDb.Country.Should().Be(dto.Country);
+    }
 }

@@ -32,11 +32,10 @@ public static class DependencyInjection
             builder.Services.AddSingleton<IMongoClient>(sp => new MongoClient(
                 settings.ConnectionString
             ));
+            builder.Services.AddScoped(sp =>
+                sp.GetRequiredService<IMongoClient>().GetDatabase(settings.DatabaseName)
+            );
         }
-
-        builder.Services.AddScoped(sp =>
-            sp.GetRequiredService<IMongoClient>().GetDatabase(settings.DatabaseName)
-        );
 
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
 

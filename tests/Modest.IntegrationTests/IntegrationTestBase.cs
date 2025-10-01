@@ -1,6 +1,5 @@
 // This file sets up Testcontainers and provides base utilities for integration tests.
 using Alba;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Modest.IntegrationTests;

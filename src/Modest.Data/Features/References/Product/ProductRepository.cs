@@ -1,3 +1,4 @@
+using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 using MongoDB.Bson;
@@ -17,7 +18,7 @@ public class ProductRepository : IProductRepository
         var indexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.FullName);
         var indexModel = new CreateIndexModel<ProductEntity>(
             indexKeys,
-            new CreateIndexOptions { Name = "idx_fullname" }
+            new CreateIndexOptions { Unique = true, Name = "idx_fullname" }
         );
         _collection.Indexes.CreateOne(indexModel);
     }
@@ -34,7 +35,42 @@ public class ProductRepository : IProductRepository
             UpdatedAt = DateTime.UtcNow,
             IsDeleted = false,
         };
+
+        var duplicate = await _collection
+            .Find(x => x.FullName == entity.FullName)
+            .FirstOrDefaultAsync();
+        if (duplicate != null)
+        {
+            if (!duplicate.IsDeleted)
+            {
+                throw new ValidationException($"Product with the same FullName already exists.");
+            }
+            // Undo delete (restore)
+            duplicate.IsDeleted = false;
+            duplicate.DeletedAt = null;
+            duplicate.Name = productCreateDto.Name;
+            duplicate.Manufacturer = productCreateDto.Manufacturer;
+            duplicate.Country = productCreateDto.Country;
+            duplicate.UpdatedAt = DateTime.UtcNow;
+            await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
+            return duplicate.ToProductDto();
+        }
+
         await _collection.InsertOneAsync(entity);
+        return entity.ToProductDto();
+    }
+
+    public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
+    {
+        var entity =
+            await _collection
+                .Find(x => x.Id == productUpdateDto.Id && !x.IsDeleted)
+                .FirstOrDefaultAsync() ?? throw new ProductNotFoundException(productUpdateDto.Id);
+        entity.Name = productUpdateDto.Name;
+        entity.Manufacturer = productUpdateDto.Manufacturer;
+        entity.Country = productUpdateDto.Country;
+        entity.UpdatedAt = DateTime.UtcNow;
+        await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return entity.ToProductDto();
     }
 
@@ -199,19 +235,5 @@ public class ProductRepository : IProductRepository
             PageSize = request.PageSize,
             PageNumber = request.PageNumber,
         };
-    }
-
-    public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
-    {
-        var entity =
-            await _collection
-                .Find(x => x.Id == productUpdateDto.Id && !x.IsDeleted)
-                .FirstOrDefaultAsync() ?? throw new ProductNotFoundException(productUpdateDto.Id);
-        entity.Name = productUpdateDto.Name;
-        entity.Manufacturer = productUpdateDto.Manufacturer;
-        entity.Country = productUpdateDto.Country;
-        entity.UpdatedAt = DateTime.UtcNow;
-        await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
-        return entity.ToProductDto();
     }
 }

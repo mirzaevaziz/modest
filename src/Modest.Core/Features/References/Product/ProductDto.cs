@@ -6,8 +6,8 @@ public record ProductDto(
     DateTimeOffset? CreatedAt,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? DeletedAt,
-    string? FullName,
+    string FullName,
     string Name,
-    string? Manufacturer,
-    string? Country
+    string Manufacturer,
+    string Country
 );
