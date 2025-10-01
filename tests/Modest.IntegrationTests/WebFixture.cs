@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Data;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using Testcontainers.MongoDb;
 using Xunit;
 
 namespace Modest.IntegrationTests;
@@ -21,25 +23,46 @@ public class WebFixture : IAsyncLifetime
 
     private const string DatabaseName = "ModestTestDb";
 
-    public IContainer MongoDbContainer { get; private set; } = default!;
+    public MongoDbContainer MongoDbContainer { get; private set; } = default!;
     public string ConnectionString { get; private set; } = default!;
     public Alba.IAlbaHost AlbaHost { get; private set; } = default!;
 
     public async Task InitializeAsync()
     {
         var containerName = "modest-tests-mongo-shared";
-        MongoDbContainer = new ContainerBuilder()
+        // MongoDbContainer = new MongoDbBuilder()
+        //     .WithName(containerName)
+        //     .WithImage("mongo:latest")
+        //     // .WithUsername("")
+        //     // .WithPassword("")
+        //     .WithReplicaSet("rs0")
+        //     .WithPortBinding(27017, true)
+        //     // .WithEnvironment("MONGO_INITDB_ROOT_USERNAME", "admin1")
+        //     // .WithEnvironment("MONGO_INITDB_ROOT_PASSWORD", "password1")
+        //     // .WithCommand("mongod", "--replSet", "rs0", "--bind_ip_all")
+        //     .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(27017))
+        //     .Build();
+
+        // await MongoDbContainer.StartAsync();
+        // ConnectionString = "mongodb://localhost:" + MongoDbContainer.GetMappedPublicPort(27017);
+
+        var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+
+        MongoDbContainer = new MongoDbBuilder()
             .WithName(containerName)
             .WithImage("mongo:latest")
+            .WithUsername("")
+            .WithPassword("")
             .WithPortBinding(27017, true)
-            .WithEnvironment("MONGO_INITDB_ROOT_USERNAME", "admin1")
-            .WithEnvironment("MONGO_INITDB_ROOT_PASSWORD", "password1")
+            .WithCommand("mongod", "--replSet", "rs0", "--bind_ip_all")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(27017))
             .Build();
 
-        await MongoDbContainer.StartAsync();
-        ConnectionString =
-            "mongodb://admin1:password1@localhost:" + MongoDbContainer.GetMappedPublicPort(27017);
+        await MongoDbContainer.StartAsync(cancellationTokenSource.Token);
+        await MongoDbContainer.ExecScriptAsync("rs.initiate();");
+
+        ConnectionString = MongoDbContainer.GetConnectionString();
 
         AlbaHost = await Alba.AlbaHost.For<Program>(builder =>
         {

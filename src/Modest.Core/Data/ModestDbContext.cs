@@ -11,7 +11,7 @@ public class ModestDbContext : DbContext
     public ModestDbContext(DbContextOptions options)
         : base(options)
     {
-        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
+        Database.AutoTransactionBehavior = AutoTransactionBehavior.Always;
 
         Database.EnsureCreated();
     }
