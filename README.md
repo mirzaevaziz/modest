@@ -23,8 +23,8 @@
 - Product CRUD (Create, Read, Update, Delete) endpoints
 - Lookup endpoints for manufacturers and countries
 - Pagination, filtering, and search
-- Unique constraints and validation
-- Soft delete support
+- Unique constraints and validation (compound unique index on Name, Manufacturer, Country)
+- Soft delete support (deleted products can be restored on create/update)
 - Modular, testable codebase
 - Comprehensive integration tests using Testcontainers
 
@@ -34,7 +34,7 @@
 
 - **Clean Architecture**: Separation of concerns between API, Core (domain/services), and Infrastructure.
 - **CQRS (Command Query Responsibility Segregation)**: Commands and queries are handled separately for clarity and scalability.
-- **Repository Pattern**: Abstracts data access for MongoDB.
+- **Repository Pattern**: Abstracts data access for MongoDB (using MongoDB.Driver directly, no EF Core).
 - **Dependency Injection**: All services and repositories are injected for testability.
 - **Endpoint Routing**: Minimal API endpoints using [FastEndpoints](https://fast-endpoints.com/).
 - **Validation**: FluentValidation for request validation.
@@ -46,21 +46,20 @@
 
 ## Technologies & Packages
 
-- **.NET 9**
-- **MongoDB** (with [MongoDB.Driver](https://www.nuget.org/packages/MongoDB.Driver/))
-- **MongoDB.EntityFrameworkCore** (EF Core provider for MongoDB)
-- **FastEndpoints** (Minimal API framework)
-- **FastEndpoints.Swagger** (OpenAPI/Swagger support)
-- **FluentValidation** (Validation)
-- **Serilog** (Logging)
-- **Testcontainers** (Integration test containers)
-- **Testcontainers.MongoDb** (MongoDB container for tests)
-- **Alba** (API integration testing)
-- **xUnit** (Testing framework)
-- **FluentAssertions** (Assertions)
-- **Microsoft.AspNetCore.OpenApi** (OpenAPI/Swagger support)
-- **Microsoft.AspNetCore.Mvc.Testing** (Test server for integration tests)
-- **coverlet.collector** (Code coverage)
+- **.NET 9** – Modern, high-performance runtime for backend services
+- **MongoDB.Driver** – Official MongoDB driver for .NET (direct, no EF Core)
+- **FastEndpoints** – Minimal, high-performance endpoint routing for APIs
+- **FastEndpoints.Swagger** – OpenAPI/Swagger UI integration
+- **FluentValidation** – Strongly-typed validation for request DTOs
+- **Serilog** – Structured logging for diagnostics and production
+- **Testcontainers** – Containerized integration testing (MongoDB replica set)
+- **Alba** – Fluent API integration testing for ASP.NET Core
+- **xUnit** – Unit and integration test framework
+- **FluentAssertions** – Readable, expressive assertions for tests
+- **Microsoft.AspNetCore.OpenApi** – OpenAPI/Swagger support for ASP.NET Core
+- **Microsoft.AspNetCore.Mvc.Testing** – Test server for integration tests
+- **coverlet.collector** – Code coverage for .NET projects
+- **Docker** – Local development and test environment for MongoDB
 
 ---
 
@@ -69,11 +68,28 @@
 ```
 modest/
 ├── src/
-│   ├── Modest.API/             # API endpoints and startup
-│   └── Modest.Core/            # Domain models, services, interfaces
+│   ├── Modest.API/              # API endpoints, startup, handlers, endpoint definitions
+│   │   ├── Endpoints/           # API endpoint classes (by domain)
+│   │   ├── Handlers/            # Exception handlers, logging, etc.
+│   │   └── ...                  # Program.cs, appsettings, etc.
+│   ├── Modest.Core/             # Domain models, services, interfaces, helpers
+│   │   ├── Common/              # Shared models and exceptions
+│   │   ├── Features/            # Domain features (e.g., Product)
+│   │   └── Helpers/             # Pagination, sorting, validation helpers
+│   └── Modest.Data/             # MongoDB repositories, data access, DI
+│       ├── Features/            # Data features (e.g., ProductRepository)
+│       ├── DependencyInjection.cs
+│       └── ...
 ├── tests/
 │   └── Modest.IntegrationTests/ # Integration tests (Testcontainers, Alba)
+│       ├── Endpoints/           # Endpoint test classes
+│       ├── Transactions/        # Transaction/edge case tests
+│       ├── IntegrationTestBase.cs
+│       ├── WebFixture.cs
+│       └── ...
 ├── Directory.Packages.props     # Centralized NuGet package versions
+├── Directory.Build.props        # Build configuration
+├── compose.yml                  # Docker Compose for local dev/test
 └── README.md
 ```
 
@@ -130,10 +146,15 @@ dotnet test
 - **Endpoints**: Each endpoint is a class inheriting from `Endpoint<TRequest, TResponse>`.
 - **Services**: Business logic is in services, injected into endpoints.
 - **Validation**: Validators are defined for each request DTO.
-- **Repositories**: Data access is abstracted via interfaces.
+- **Repositories**: Data access is abstracted via interfaces. All test data setup uses the repository, not direct DbContext access.
 - **DTOs**: Data Transfer Objects are used for API contracts.
 - **Logging**: Uses Serilog and Microsoft.Extensions.Logging.
-- **Test Isolation**: Each test resets the MongoDB database for isolation.
+- **Test Isolation**: Each test resets the MongoDB database for isolation. Integration tests use Testcontainers with a MongoDB replica set, and the Alba host is restarted after each reset for true isolation.
+- Robust update logic: On update, if a duplicate (by FullName) exists and is deleted, it is restored; if not deleted, a validation error is thrown.
+
+### .NET Version
+
+This project targets **.NET 9**. Ensure you have the latest .NET 9 SDK installed.
 
 ---
 

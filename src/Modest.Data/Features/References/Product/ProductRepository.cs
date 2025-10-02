@@ -25,39 +25,52 @@ public class ProductRepository : IProductRepository
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto)
     {
-        var entity = new ProductEntity
+        using var session = await _collection.Database.Client.StartSessionAsync();
+        session.StartTransaction();
+        try
         {
-            Id = Guid.NewGuid(),
-            Name = productCreateDto.Name,
-            Manufacturer = productCreateDto.Manufacturer,
-            Country = productCreateDto.Country,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsDeleted = false,
-        };
-
-        var duplicate = await _collection
-            .Find(x => x.FullName == entity.FullName)
-            .FirstOrDefaultAsync();
-        if (duplicate != null)
-        {
-            if (!duplicate.IsDeleted)
+            var entity = new ProductEntity
             {
-                throw new ValidationException($"Product with the same FullName already exists.");
-            }
-            // Undo delete (restore)
-            duplicate.IsDeleted = false;
-            duplicate.DeletedAt = null;
-            duplicate.Name = productCreateDto.Name;
-            duplicate.Manufacturer = productCreateDto.Manufacturer;
-            duplicate.Country = productCreateDto.Country;
-            duplicate.UpdatedAt = DateTime.UtcNow;
-            await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
-            return duplicate.ToProductDto();
-        }
+                Name = productCreateDto.Name,
+                Manufacturer = productCreateDto.Manufacturer,
+                Country = productCreateDto.Country,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false,
+            };
 
-        await _collection.InsertOneAsync(entity);
-        return entity.ToProductDto();
+            var duplicate = await _collection
+                .Find(x => x.FullName == entity.FullName)
+                .FirstOrDefaultAsync();
+            if (duplicate != null)
+            {
+                if (!duplicate.IsDeleted)
+                {
+                    throw new ValidationException(
+                        $"Product with the same FullName already exists."
+                    );
+                }
+                // Undo delete (restore)
+                duplicate.IsDeleted = false;
+                duplicate.DeletedAt = null;
+                duplicate.Name = productCreateDto.Name;
+                duplicate.Manufacturer = productCreateDto.Manufacturer;
+                duplicate.Country = productCreateDto.Country;
+                duplicate.UpdatedAt = DateTime.UtcNow;
+                await _collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
+                await session.CommitTransactionAsync();
+                return duplicate.ToProductDto();
+            }
+
+            await _collection.InsertOneAsync(session, entity);
+            await session.CommitTransactionAsync();
+            return entity.ToProductDto();
+        }
+        catch
+        {
+            await session.AbortTransactionAsync();
+            throw;
+        }
     }
 
     public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)

@@ -1,0 +1,38 @@
+
+services:
+  mongodb1:
+    image: mongo:latest # Official MongoDB image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mongodb-replicaset
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_DATABASE: admin
+    ports:
+      - 27017:27017
+    command: --replSet rs0 --keyFile /etc/mongo-keyfile --bind_ip_all --port 27017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 -u admin -p password --authenticationDatabase admin
+      interval: 5s
+      timeout: 15s
+      start_period: 15s
+      retries: 10
+
+  mongo-express: # Optional: Add Mongo Express for a web-based UI
+    image: mongo-express:latest
+    container_name: mongo-express-container
+    restart: always
+    ports:
+      - "8081:8081" # Expose Mongo Express on port 8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb1 # This should match the service name
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_REPLICA_SET: rs0
+    depends_on:
+      - mongodb1
