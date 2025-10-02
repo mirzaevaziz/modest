@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -95,6 +96,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
 
+        // Assert
         var product = await resp.ReadAsJsonAsync<ProductDto>();
         product.Should().NotBeNull();
         product.Id.Should().NotBeEmpty();
@@ -102,8 +104,8 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
         product.Manufacturer.Should().Be(dto.Manufacturer);
         product.Country.Should().Be(dto.Country);
 
-        ModestDbContext.ChangeTracker.Clear();
-        var productInDb = await ModestDbContext.Products.FindAsync(product.Id);
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var productInDb = await productRepository.GetProductByIdAsync(product.Id);
         productInDb.Should().NotBeNull();
         productInDb!.Name.Should().Be(dto.Name);
         productInDb.Manufacturer.Should().Be(dto.Manufacturer);
@@ -131,36 +133,29 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     [Fact]
     public async Task CreateProductDeletedDuplicateReturnsOkAndProductAsync()
     {
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
         // Arrange: Add a deleted entity directly via DbContext
-        var deletedEntity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "Test Product",
-            Manufacturer = "TestMan",
-            Country = "TestLand",
-        };
-        ModestDbContext.Products.Add(deletedEntity);
-        await ModestDbContext.SaveChangesAsync();
-        ModestDbContext.Products.Remove(deletedEntity);
-        await ModestDbContext.SaveChangesAsync();
+        var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
+        var entity = await productRepository.CreateProductAsync(dto);
+        await productRepository.DeleteProductAsync(entity.Id);
 
         // Act: Create a duplicate via the API
-        var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
         var resp = await AlbaHost.Scenario(api =>
         {
             api.Post.Json(dto).ToUrl("/api/references/products");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
 
+        // Assert
         var product = await resp.ReadAsJsonAsync<ProductDto>();
         product.Should().NotBeNull();
-        product.Id.Should().Be(deletedEntity.Id);
+        product.Id.Should().Be(entity.Id);
         product!.Name.Should().Be(dto.Name);
         product.Manufacturer.Should().Be(dto.Manufacturer);
         product.Country.Should().Be(dto.Country);
 
-        ModestDbContext.ChangeTracker.Clear();
-        var productInDb = await ModestDbContext.Products.FindAsync(product.Id);
+        var productInDb = await productRepository.GetProductByIdAsync(product.Id);
         productInDb.Should().NotBeNull();
         productInDb!.IsDeleted.Should().BeFalse();
         productInDb.Name.Should().Be(dto.Name);

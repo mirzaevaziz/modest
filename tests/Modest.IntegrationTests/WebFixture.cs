@@ -1,11 +1,7 @@
 using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Modest.Core.Data;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Testcontainers.MongoDb;
 using Xunit;
@@ -17,7 +13,7 @@ public class WebFixture : IAsyncLifetime
     // Drop the test database before each test
     public async Task ResetDatabaseAsync()
     {
-        var client = new MongoClient(ConnectionString);
+        var client = AlbaHost.Services.GetRequiredService<IMongoClient>();
         await client.DropDatabaseAsync(DatabaseName);
     }
 
@@ -30,22 +26,6 @@ public class WebFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         var containerName = "modest-tests-mongo-shared";
-        // MongoDbContainer = new MongoDbBuilder()
-        //     .WithName(containerName)
-        //     .WithImage("mongo:latest")
-        //     // .WithUsername("")
-        //     // .WithPassword("")
-        //     .WithReplicaSet("rs0")
-        //     .WithPortBinding(27017, true)
-        //     // .WithEnvironment("MONGO_INITDB_ROOT_USERNAME", "admin1")
-        //     // .WithEnvironment("MONGO_INITDB_ROOT_PASSWORD", "password1")
-        //     // .WithCommand("mongod", "--replSet", "rs0", "--bind_ip_all")
-        //     .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(27017))
-        //     .Build();
-
-        // await MongoDbContainer.StartAsync();
-        // ConnectionString = "mongodb://localhost:" + MongoDbContainer.GetMappedPublicPort(27017);
-
         var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
 
@@ -79,11 +59,11 @@ public class WebFixture : IAsyncLifetime
                         .CamelCase;
                 });
 
-                // services.Remove(services.First(s => s.ServiceType == typeof(ModestDbContext)));
-                services.AddDbContext<ModestDbContext>(options =>
-                {
-                    options.UseMongoDB(ConnectionString, DatabaseName);
-                });
+                // Register IMongoDatabase
+                services.AddScoped<IMongoClient>(sp => new MongoClient(ConnectionString));
+                services.AddScoped(sp =>
+                    sp.GetRequiredService<IMongoClient>().GetDatabase(DatabaseName)
+                );
             });
         });
         await AlbaHost.StartAsync();

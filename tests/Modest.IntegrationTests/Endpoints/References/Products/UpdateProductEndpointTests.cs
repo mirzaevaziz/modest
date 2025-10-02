@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -27,16 +28,11 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
         string? country
     )
     {
-        // Arrange: create a valid product directly in the database
-        var entity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "EdgeName",
-            Manufacturer = "EdgeMan",
-            Country = "EdgeLand",
-        };
-        ModestDbContext.Products.Add(entity);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: create a valid product using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var entity = await productRepository.CreateProductAsync(
+            new ProductCreateDto("EdgeName", "EdgeMan", "EdgeLand")
+        );
         // Act: try to update with edge case values
         var updateDto = new ProductUpdateDto(entity.Id, name!, manufacturer!, country!);
         var updateResp = await AlbaHost.Scenario(api =>
@@ -49,16 +45,11 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductReturnsOkAndUpdatesProductAsync()
     {
-        // Arrange: create a valid product directly in the database
-        var entity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "EdgeName",
-            Manufacturer = "EdgeMan",
-            Country = "EdgeLand",
-        };
-        ModestDbContext.Products.Add(entity);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: create a valid product using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var entity = await productRepository.CreateProductAsync(
+            new ProductCreateDto("EdgeName", "EdgeMan", "EdgeLand")
+        );
         // Act: update the product
         var updateDto = new ProductUpdateDto(entity.Id, "UpdatedName", "UpdatedMan", "UpdatedLand");
         var updateResp = await AlbaHost.Scenario(api =>
@@ -73,8 +64,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
         updated.Manufacturer.Should().Be("UpdatedMan");
         updated.Country.Should().Be("UpdatedLand");
         // Assert in DB
-        ModestDbContext.ChangeTracker.Clear();
-        var inDb = await ModestDbContext.Products.FindAsync(entity.Id);
+        var inDb = await productRepository.GetProductByIdAsync(entity.Id);
         inDb.Should().NotBeNull();
         inDb!.Name.Should().Be("UpdatedName");
         inDb.Manufacturer.Should().Be("UpdatedMan");
@@ -95,28 +85,14 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductDuplicateReturnsBadRequestAsync()
     {
-        // Arrange: create two products directly in the database
-        var entity1 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "Name1",
-            Manufacturer = "Man1",
-            Country = "Land1",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-        };
-        var entity2 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "Name2",
-            Manufacturer = "Man2",
-            Country = "Land2",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-        };
-        ModestDbContext.Products.Add(entity1);
-        ModestDbContext.Products.Add(entity2);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: create two products using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var entity1 = await productRepository.CreateProductAsync(
+            new ProductCreateDto("Name1", "Man1", "Land1")
+        );
+        var entity2 = await productRepository.CreateProductAsync(
+            new ProductCreateDto("Name2", "Man2", "Land2")
+        );
         // Try to update entity2 to have the same fields as entity1 (should fail)
         var updateDto = new ProductUpdateDto(
             entity2.Id,
@@ -134,30 +110,15 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductDeletedDuplicateReturnsOkRequestAsync()
     {
-        // Arrange: create two products directly in the database
-        var entity1 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "Name1",
-            Manufacturer = "Man1",
-            Country = "Land1",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-        };
-        var entity2 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "Name2",
-            Manufacturer = "Man2",
-            Country = "Land2",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-        };
-        ModestDbContext.Products.Add(entity1);
-        ModestDbContext.Products.Add(entity2);
-        await ModestDbContext.SaveChangesAsync();
-        ModestDbContext.Products.Remove(entity1);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: create two products using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var entity1 = await productRepository.CreateProductAsync(
+            new ProductCreateDto("Name1", "Man1", "Land1")
+        );
+        var entity2 = await productRepository.CreateProductAsync(
+            new ProductCreateDto("Name2", "Man2", "Land2")
+        );
+        await productRepository.DeleteProductAsync(entity1.Id);
         // Try to update entity2 to have the same fields as entity1
         var updateDto = new ProductUpdateDto(
             entity2.Id,
@@ -170,17 +131,17 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
             api.Put.Json(updateDto).ToUrl($"/api/references/products");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        ModestDbContext.ChangeTracker.Clear();
-        var inDb = await ModestDbContext.Products.FindAsync(entity1.Id);
+        var inDb = await productRepository.GetProductByIdAsync(entity1.Id);
         inDb.Should().NotBeNull();
-        inDb!.Name.Should().StartWith(entity1.Name + $" - Changed ");
+        inDb!.Name.Should().StartWith(entity1.Name + " - Changed ");
         inDb.Manufacturer.Should().Be(entity1.Manufacturer);
         inDb.Country.Should().Be(entity1.Country);
 
-        inDb = await ModestDbContext.Products.FindAsync(entity2.Id);
+        inDb = await productRepository.GetProductByIdAsync(entity2.Id);
         inDb.Should().NotBeNull();
         inDb!.Name.Should().Be(entity1.Name);
         inDb.Manufacturer.Should().Be(entity1.Manufacturer);
         inDb.Country.Should().Be(entity1.Country);
     }
+    // ...existing code...
 }

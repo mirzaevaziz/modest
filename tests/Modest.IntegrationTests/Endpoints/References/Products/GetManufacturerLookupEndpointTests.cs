@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 using Xunit;
@@ -33,22 +34,15 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     [Fact]
     public async Task GetManufacturerLookupReturnsPagedDistinctResultsAsync()
     {
-        // Add 15 products, 5 unique manufacturers
+        // Add 15 products, 5 unique manufacturers using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
         var manufacturers = new[] { "A", "B", "C", "D", "E" };
         for (var i = 1; i <= 15; i++)
         {
-            ModestDbContext.Products.Add(
-                new ProductEntity
-                {
-                    Id = Guid.NewGuid(),
-                    Name = $"Prod{i}",
-                    Manufacturer = manufacturers[(i - 1) % 5],
-                    Country = $"Land{i}",
-                }
+            await productRepository.CreateProductAsync(
+                new ProductCreateDto($"Prod{i}", manufacturers[(i - 1) % 5], $"Land{i}")
             );
         }
-
-        await ModestDbContext.SaveChangesAsync();
         // Page 1, size 3
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -65,35 +59,11 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     [Fact]
     public async Task GetManufacturerLookupWithSearchReturnsFilteredAsync()
     {
-        // Add products
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alpha",
-                Manufacturer = "AlphaMan",
-                Country = "X",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Beta",
-                Manufacturer = "BetaMan",
-                Country = "Y",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Gamma",
-                Manufacturer = "GammaMan",
-                Country = "Z",
-            }
-        );
-        await ModestDbContext.SaveChangesAsync();
+        // Add products using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "AlphaMan", "X"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "BetaMan", "Y"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "GammaMan", "Z"));
         // Search for 'Beta'
         var resp = await AlbaHost.Scenario(api =>
         {

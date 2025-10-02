@@ -2,13 +2,12 @@
   <ItemGroup>
     <PackageVersion Include="FastEndpoints" Version="7.0.1" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="7.0.1" />
-    <PackageVersion Include="FluentAssertions" Version="8.6.0" />
+    <PackageVersion Include="FluentAssertions" Version="8.7.0" />
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
-    <PackageVersion Include="MongoDB.EntityFrameworkCore" Version="9.0.1" />
     <PackageVersion Include="Serilog" Version="4.3.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
@@ -16,7 +15,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Testcontainers.MongoDb" Version="4.7.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="Testcontainers" Version="4.7.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
     <PackageVersion Include="MongoDB.Driver" Version="3.5.0" />

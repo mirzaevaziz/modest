@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -10,30 +11,11 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     [Fact]
     public async Task GetAllProductsReturnsAllAsync()
     {
-        // Arrange: add 3 products
-        var p1 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "A",
-            Manufacturer = "M1",
-            Country = "C1",
-        };
-        var p2 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "B",
-            Manufacturer = "M2",
-            Country = "C2",
-        };
-        var p3 = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "C",
-            Manufacturer = "M3",
-            Country = "C3",
-        };
-        ModestDbContext.Products.AddRange(p1, p2, p3);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: add 3 products using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var p1 = await productRepository.CreateProductAsync(new ProductCreateDto("A", "M1", "C1"));
+        var p2 = await productRepository.CreateProductAsync(new ProductCreateDto("B", "M2", "C2"));
+        var p3 = await productRepository.CreateProductAsync(new ProductCreateDto("C", "M3", "C3"));
         // Act
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -49,21 +31,14 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     [Fact]
     public async Task GetAllProductsReturnsPagedAsync()
     {
-        // Arrange: add 15 products
+        // Arrange: add 15 products using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
         for (var i = 1; i <= 15; i++)
         {
-            ModestDbContext.Products.Add(
-                new ProductEntity
-                {
-                    Id = Guid.NewGuid(),
-                    Name = $"Prod{i}",
-                    Manufacturer = $"Man{i}",
-                    Country = $"Land{i}",
-                }
+            await productRepository.CreateProductAsync(
+                new ProductCreateDto($"Prod{i}", $"Man{i}", $"Land{i}")
             );
         }
-
-        await ModestDbContext.SaveChangesAsync();
         // Act: page 2, size 10
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -79,25 +54,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithFilterReturnsFilteredAsync()
     {
         // Arrange
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alpha",
-                Manufacturer = "A",
-                Country = "X",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Beta",
-                Manufacturer = "B",
-                Country = "Y",
-            }
-        );
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
         // Act: filter by name 'lpha'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -116,34 +75,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithManufacturerFilterReturnsFilteredAsync()
     {
         // Arrange
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alpha",
-                Manufacturer = "A",
-                Country = "X",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Beta",
-                Manufacturer = "B",
-                Country = "Y",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Gamma",
-                Manufacturer = "A",
-                Country = "Z",
-            }
-        );
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "A", "Z"));
         // Act: filter by manufacturer 'A'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -162,34 +97,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithCountryFilterReturnsFilteredAsync()
     {
         // Arrange
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Alpha",
-                Manufacturer = "A",
-                Country = "X",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Beta",
-                Manufacturer = "B",
-                Country = "Y",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "Gamma",
-                Manufacturer = "C",
-                Country = "X",
-            }
-        );
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "C", "X"));
         // Act: filter by country 'X'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -208,34 +119,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithSortReturnsSortedAsync()
     {
         // Arrange
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "C",
-                Manufacturer = "A",
-                Country = "X",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "A",
-                Manufacturer = "B",
-                Country = "Y",
-            }
-        );
-        ModestDbContext.Products.Add(
-            new ProductEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = "B",
-                Manufacturer = "C",
-                Country = "Z",
-            }
-        );
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        await productRepository.CreateProductAsync(new ProductCreateDto("C", "A", "X"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("A", "B", "Y"));
+        await productRepository.CreateProductAsync(new ProductCreateDto("B", "C", "Z"));
         // Act: sort by name ascending
         var resp = await AlbaHost.Scenario(api =>
         {

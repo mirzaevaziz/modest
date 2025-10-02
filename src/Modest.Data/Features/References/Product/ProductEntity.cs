@@ -1,6 +1,4 @@
-using Modest.Core.Common.Models;
-
-namespace Modest.Core.Features.References.Product;
+namespace Modest.Data.Features.References.Product;
 
 public class ProductEntity : AuditableEntity
 {
@@ -11,6 +9,6 @@ public class ProductEntity : AuditableEntity
     }
 
     public required string Name { get; set; }
-    public string? Manufacturer { get; set; }
-    public string? Country { get; set; }
+    public required string Manufacturer { get; set; }
+    public required string Country { get; set; }
 }

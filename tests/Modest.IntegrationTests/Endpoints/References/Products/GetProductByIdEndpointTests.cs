@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -10,16 +11,11 @@ public class GetProductByIdEndpointTests(WebFixture webFixture) : IntegrationTes
     [Fact]
     public async Task GetProductByIdReturnsProductAsync()
     {
-        // Arrange: create a product
-        var entity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "TestProd",
-            Manufacturer = "TestMan",
-            Country = "TestLand",
-        };
-        ModestDbContext.Products.Add(entity);
-        await ModestDbContext.SaveChangesAsync();
+        // Arrange: create a product using the repository
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var entity = await productRepository.CreateProductAsync(
+            new ProductCreateDto("TestProd", "TestMan", "TestLand")
+        );
         // Act
         var resp = await AlbaHost.Scenario(api =>
         {

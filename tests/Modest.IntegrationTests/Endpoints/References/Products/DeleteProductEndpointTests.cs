@@ -1,5 +1,6 @@
 using System.Net;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -11,15 +12,11 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     public async Task DeleteProductReturnsOkAndDeletesProductAsync()
     {
         // Arrange: create a product directly in the database
-        var entity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "DeleteMe",
-            Manufacturer = "DeleteMan",
-            Country = "DeleteLand",
-        };
-        ModestDbContext.Products.Add(entity);
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
+        var entity = await productRepository.CreateProductAsync(
+            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
+        );
         // Act: delete the product
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -27,8 +24,7 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         // Assert: product is deleted
-        ModestDbContext.ChangeTracker.Clear();
-        var inDb = await ModestDbContext.Products.FindAsync(entity.Id);
+        var inDb = await productRepository.GetProductByIdAsync(entity.Id);
         inDb.Should().NotBeNull();
         inDb!.IsDeleted.Should().BeTrue();
         inDb.DeletedAt.Should().NotBeNull();
@@ -50,15 +46,11 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     public async Task DeleteProductTwiceReturnsOkFalseSecondTimeAsync()
     {
         // Arrange: create a product
-        var entity = new ProductEntity
-        {
-            Id = Guid.NewGuid(),
-            Name = "DeleteTwice",
-            Manufacturer = "DeleteMan",
-            Country = "DeleteLand",
-        };
-        ModestDbContext.Products.Add(entity);
-        await ModestDbContext.SaveChangesAsync();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
+        var entity = await productRepository.CreateProductAsync(
+            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
+        );
         // Act: delete once
         var resp1 = await AlbaHost.Scenario(api =>
         {

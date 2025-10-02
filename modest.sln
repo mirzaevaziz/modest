@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{40DCA49B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modest.IntegrationTests", "tests\Modest.IntegrationTests\Modest.IntegrationTests.csproj", "{176D119F-BBF3-4201-A2F1-B4A74CEB6E8E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modest.Data", "src\Modest.Data\Modest.Data.csproj", "{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,10 +38,15 @@ Global
 		{176D119F-BBF3-4201-A2F1-B4A74CEB6E8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{176D119F-BBF3-4201-A2F1-B4A74CEB6E8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{176D119F-BBF3-4201-A2F1-B4A74CEB6E8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F9FDADC3-8275-4468-A9D2-833A8530A6C4} = {5A6F4473-C95A-45EB-A56C-37696D685405}
 		{183C0356-FEF4-4C9A-B9AF-F1E03FFC7836} = {5A6F4473-C95A-45EB-A56C-37696D685405}
 		{176D119F-BBF3-4201-A2F1-B4A74CEB6E8E} = {40DCA49B-0EFF-42AF-9045-4620870DF5B9}
+		{41415FE8-FAA6-4C03-ABE1-A5A0CF466F40} = {5A6F4473-C95A-45EB-A56C-37696D685405}
 	EndGlobalSection
 EndGlobal
