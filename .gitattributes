@@ -1,7 +1,23 @@
 # Project
 
-* text=auto
+* text=auto eol=lf
 *.sh text eol=lf
+
+# Force LF for all source code files
+*.cs text eol=lf
+*.fs text eol=lf
+*.vb text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.config text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
 
 
 *.sln       merge=binary
