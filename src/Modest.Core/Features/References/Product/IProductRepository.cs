@@ -14,7 +14,7 @@ public interface IProductRepository
     );
     Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(PaginatedRequest<string> request);
     Task<ProductDto?> GetProductByIdAsync(Guid id);
-    Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto);
+    Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto, string code);
     Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto);
     Task<bool> DeleteProductAsync(Guid id);
 }

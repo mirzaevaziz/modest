@@ -34,12 +34,12 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     [Fact]
     public async Task GetManufacturerLookupReturnsPagedDistinctResultsAsync()
     {
-        // Add 15 products, 5 unique manufacturers using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var manufacturers = new[] { "A", "B", "C", "D", "E" };
+        // Add 15 products, 5 unique manufacturers using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var manufacturers = new[] { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE" };
         for (var i = 1; i <= 15; i++)
         {
-            await productRepository.CreateProductAsync(
+            await productService.CreateProductAsync(
                 new ProductCreateDto($"Prod{i}", manufacturers[(i - 1) % 5], $"Land{i}")
             );
         }
@@ -59,11 +59,11 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     [Fact]
     public async Task GetManufacturerLookupWithSearchReturnsFilteredAsync()
     {
-        // Add products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "AlphaMan", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "BetaMan", "Y"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "GammaMan", "Z"));
+        // Add products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AlphaMan", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BetaMan", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "GammaMan", "ZZZZ"));
         // Search for 'Beta'
         var resp = await AlbaHost.Scenario(api =>
         {

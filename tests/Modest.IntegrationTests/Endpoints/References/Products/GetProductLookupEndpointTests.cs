@@ -33,11 +33,11 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [Fact]
     public async Task GetProductLookupReturnsPagedResultsAsync()
     {
-        // Add 15 products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        // Add 15 products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         for (var i = 1; i <= 15; i++)
         {
-            await productRepository.CreateProductAsync(
+            await productService.CreateProductAsync(
                 new ProductCreateDto($"Prod{i}", $"Man{i}", $"Land{i}")
             );
         }
@@ -57,11 +57,11 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [Fact]
     public async Task GetProductLookupWithSearchReturnsFilteredAsync()
     {
-        // Add products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "C", "Z"));
+        // Add products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAA", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BAA", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CAA", "ZZZZ"));
         // Search for 'lph'
         var resp = await AlbaHost.Scenario(api =>
         {

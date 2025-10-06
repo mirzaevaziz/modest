@@ -8,22 +8,52 @@ namespace Modest.Data.Features.References.Product;
 
 public class ProductRepository : IProductRepository
 {
+    private const string CollectionName = "products";
+
     private readonly IMongoCollection<ProductEntity> _collection;
 
     public ProductRepository(IMongoDatabase database)
     {
-        _collection = database.GetCollection<ProductEntity>("products");
+        _collection = database.GetCollection<ProductEntity>(CollectionName);
+
+        // Ensure index for Code (unique)
+        var codeIndexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.Code);
+        var codeIndexModel = new CreateIndexModel<ProductEntity>(
+            codeIndexKeys,
+            new CreateIndexOptions
+            {
+                Unique = true,
+                Name = "idx_code",
+                Background = true, // Non-blocking index creation
+            }
+        );
 
         // Ensure index for FullName (compound index on Name, Manufacturer, Country)
-        var indexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.FullName);
-        var indexModel = new CreateIndexModel<ProductEntity>(
-            indexKeys,
-            new CreateIndexOptions { Unique = true, Name = "idx_fullname" }
+        // Note: CreateOne with background:true is idempotent and won't recreate if exists
+        var fullNameIndexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.FullName);
+        var fullNameIndexModel = new CreateIndexModel<ProductEntity>(
+            fullNameIndexKeys,
+            new CreateIndexOptions
+            {
+                Unique = true,
+                Name = "idx_fullname",
+                Background = true, // Non-blocking index creation
+            }
         );
-        _collection.Indexes.CreateOne(indexModel);
+
+        try
+        {
+            _collection.Indexes.CreateOne(codeIndexModel);
+            _collection.Indexes.CreateOne(fullNameIndexModel);
+        }
+        catch (MongoCommandException ex)
+            when (ex.CodeName is "IndexOptionsConflict" or "IndexKeySpecsConflict")
+        {
+            // Index already exists with different options or same name, ignore
+        }
     }
 
-    public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto)
+    public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto, string code)
     {
         using var session = await _collection.Database.Client.StartSessionAsync();
         session.StartTransaction();
@@ -31,6 +61,7 @@ public class ProductRepository : IProductRepository
         {
             var entity = new ProductEntity
             {
+                Code = code,
                 Name = productCreateDto.Name,
                 Manufacturer = productCreateDto.Manufacturer,
                 Country = productCreateDto.Country,

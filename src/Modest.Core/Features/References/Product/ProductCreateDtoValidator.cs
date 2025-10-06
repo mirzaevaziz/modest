@@ -11,12 +11,12 @@ public class ProductCreateDtoValidator : AbstractValidator<ProductCreateDto>
 
         RuleFor(x => x.Manufacturer)
             .NotEmpty()
-            .MinimumLength(NameMinLength)
-            .MaximumLength(NameMaxLength);
+            .MinimumLength(ManufacturerMinLength)
+            .MaximumLength(ManufacturerMaxLength);
 
         RuleFor(x => x.Country)
             .NotEmpty()
-            .MinimumLength(NameMinLength)
-            .MaximumLength(NameMaxLength);
+            .MinimumLength(CountryMinLength)
+            .MaximumLength(CountryMaxLength);
     }
 }

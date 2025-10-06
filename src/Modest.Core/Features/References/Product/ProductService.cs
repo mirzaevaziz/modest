@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Modest.Core.Common.Models;
+using Modest.Core.Features.Utils.SequenceNumber;
 using Modest.Core.Helpers;
 
 namespace Modest.Core.Features.References.Product;
@@ -23,6 +24,7 @@ public interface IProductService
 
 public class ProductService(
     IProductRepository productRepository,
+    ISequenceNumberService sequenceNumberService,
     IServiceProvider serviceProvider,
     ILogger<ProductService> logger
 ) : IProductService
@@ -72,7 +74,11 @@ public class ProductService(
         );
         ValidationHelper.ValidateAndThrow(productCreateDto, serviceProvider);
 
-        var entity = await productRepository.CreateProductAsync(productCreateDto);
+        // Generate product code using sequence service
+        var sequenceNumber = await sequenceNumberService.GetNextAsync("products");
+        var code = $"SKU-{sequenceNumber:D6}"; // Format: SKU-000001
+
+        var entity = await productRepository.CreateProductAsync(productCreateDto, code);
 
         ProductServiceLog.ProductCreated(logger, entity.Id, entity.FullName!, null);
         return entity;

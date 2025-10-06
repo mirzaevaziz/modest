@@ -11,10 +11,11 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task DeleteProductReturnsOkAndDeletesProductAsync()
     {
-        // Arrange: create a product directly in the database
+        // Arrange: create a product using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
-        var entity = await productRepository.CreateProductAsync(
+        var entity = await productService.CreateProductAsync(
             new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
         );
         // Act: delete the product
@@ -46,9 +47,9 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     public async Task DeleteProductTwiceReturnsOkFalseSecondTimeAsync()
     {
         // Arrange: create a product
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
 
-        var entity = await productRepository.CreateProductAsync(
+        var entity = await productService.CreateProductAsync(
             new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
         );
         // Act: delete once

@@ -33,12 +33,12 @@ public class GetCountryLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [Fact]
     public async Task GetCountryLookupReturnsPagedDistinctResultsAsync()
     {
-        // Add 15 products, 5 unique countries using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var countries = new[] { "X", "Y", "Z", "W", "Q" };
+        // Add 15 products, 5 unique countries using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var countries = new[] { "XXXX", "YYYY", "ZZZZ", "WWWW", "QQQQ" };
         for (var i = 1; i <= 15; i++)
         {
-            await productRepository.CreateProductAsync(
+            await productService.CreateProductAsync(
                 new ProductCreateDto($"Prod{i}", $"Man{i}", countries[(i - 1) % 5])
             );
         }
@@ -58,11 +58,11 @@ public class GetCountryLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [Fact]
     public async Task GetCountryLookupWithSearchReturnsFilteredAsync()
     {
-        // Add products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "AlphaLand"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "BetaLand"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "C", "GammaLand"));
+        // Add products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "AlphaLand"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "BetaLand"));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CCCC", "GammaLand"));
         // Search for 'Beta'
         var resp = await AlbaHost.Scenario(api =>
         {

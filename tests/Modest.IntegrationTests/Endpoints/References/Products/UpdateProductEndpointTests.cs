@@ -28,9 +28,10 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
         string? country
     )
     {
-        // Arrange: create a valid product using the repository
+        // Arrange: create a valid product using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var entity = await productRepository.CreateProductAsync(
+        var entity = await productService.CreateProductAsync(
             new ProductCreateDto("EdgeName", "EdgeMan", "EdgeLand")
         );
         // Act: try to update with edge case values
@@ -45,9 +46,10 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductReturnsOkAndUpdatesProductAsync()
     {
-        // Arrange: create a valid product using the repository
+        // Arrange: create a valid product using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var entity = await productRepository.CreateProductAsync(
+        var entity = await productService.CreateProductAsync(
             new ProductCreateDto("EdgeName", "EdgeMan", "EdgeLand")
         );
         // Act: update the product
@@ -85,12 +87,12 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductDuplicateReturnsBadRequestAsync()
     {
-        // Arrange: create two products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var entity1 = await productRepository.CreateProductAsync(
+        // Arrange: create two products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var entity1 = await productService.CreateProductAsync(
             new ProductCreateDto("Name1", "Man1", "Land1")
         );
-        var entity2 = await productRepository.CreateProductAsync(
+        var entity2 = await productService.CreateProductAsync(
             new ProductCreateDto("Name2", "Man2", "Land2")
         );
         // Try to update entity2 to have the same fields as entity1 (should fail)
@@ -110,12 +112,13 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [Fact]
     public async Task UpdateProductDeletedDuplicateReturnsOkRequestAsync()
     {
-        // Arrange: create two products using the repository
+        // Arrange: create two products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var entity1 = await productRepository.CreateProductAsync(
+        var entity1 = await productService.CreateProductAsync(
             new ProductCreateDto("Name1", "Man1", "Land1")
         );
-        var entity2 = await productRepository.CreateProductAsync(
+        var entity2 = await productService.CreateProductAsync(
             new ProductCreateDto("Name2", "Man2", "Land2")
         );
         await productRepository.DeleteProductAsync(entity1.Id);

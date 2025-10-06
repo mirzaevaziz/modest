@@ -133,11 +133,12 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     [Fact]
     public async Task CreateProductDeletedDuplicateReturnsOkAndProductAsync()
     {
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
-        // Arrange: Add a deleted entity directly via DbContext
+        // Arrange: Add a deleted entity using service
         var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand");
-        var entity = await productRepository.CreateProductAsync(dto);
+        var entity = await productService.CreateProductAsync(dto);
         await productRepository.DeleteProductAsync(entity.Id);
 
         // Act: Create a duplicate via the API

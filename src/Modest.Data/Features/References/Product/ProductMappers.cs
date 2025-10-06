@@ -13,6 +13,7 @@ public static class ProductMappers
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.DeletedAt,
+            entity.Code,
             entity.FullName,
             entity.Name,
             entity.Manufacturer,

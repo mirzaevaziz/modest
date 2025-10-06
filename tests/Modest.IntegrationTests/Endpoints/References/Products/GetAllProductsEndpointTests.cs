@@ -11,11 +11,17 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     [Fact]
     public async Task GetAllProductsReturnsAllAsync()
     {
-        // Arrange: add 3 products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        var p1 = await productRepository.CreateProductAsync(new ProductCreateDto("A", "M1", "C1"));
-        var p2 = await productRepository.CreateProductAsync(new ProductCreateDto("B", "M2", "C2"));
-        var p3 = await productRepository.CreateProductAsync(new ProductCreateDto("C", "M3", "C3"));
+        // Arrange: add 3 products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var p1 = await productService.CreateProductAsync(
+            new ProductCreateDto("AAAA", "M1111", "C1111")
+        );
+        var p2 = await productService.CreateProductAsync(
+            new ProductCreateDto("BBBB", "M2222", "C2222")
+        );
+        var p3 = await productService.CreateProductAsync(
+            new ProductCreateDto("CCCC", "M3333", "C3333")
+        );
         // Act
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -25,17 +31,17 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
         result.Should().NotBeNull();
         result!.Count.Should().Be(3);
-        result.Select(x => x.Id).Should().Contain(new[] { p1.Id, p2.Id, p3.Id });
+        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id, p3.Id]);
     }
 
     [Fact]
     public async Task GetAllProductsReturnsPagedAsync()
     {
-        // Arrange: add 15 products using the repository
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+        // Arrange: add 15 products using the service
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         for (var i = 1; i <= 15; i++)
         {
-            await productRepository.CreateProductAsync(
+            await productService.CreateProductAsync(
                 new ProductCreateDto($"Prod{i}", $"Man{i}", $"Land{i}")
             );
         }
@@ -54,9 +60,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithFilterReturnsFilteredAsync()
     {
         // Arrange
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
         // Act: filter by name 'lpha'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -75,54 +81,54 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     public async Task GetAllProductsWithManufacturerFilterReturnsFilteredAsync()
     {
         // Arrange
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "A", "Z"));
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "AAAA", "ZZZZ"));
         // Act: filter by manufacturer 'A'
         var resp = await AlbaHost.Scenario(api =>
         {
             api.Get.Url(
-                $"/api/references/products?filter=%7B%0A%20%20%22manufacturer%22%3A%20%22A%22%7D&pageNumber=1&pageSize=10"
+                $"/api/references/products?filter=%7B%0A%20%20%22manufacturer%22%3A%20%22AAAA%22%7D&pageNumber=1&pageSize=10"
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
         result.Should().NotBeNull();
         result!.Count.Should().Be(2);
-        result.All(x => x.Manufacturer == "A").Should().BeTrue();
+        result.All(x => x.Manufacturer == "AAAA").Should().BeTrue();
     }
 
     [Fact]
     public async Task GetAllProductsWithCountryFilterReturnsFilteredAsync()
     {
         // Arrange
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("Alpha", "A", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Beta", "B", "Y"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("Gamma", "C", "X"));
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CCCC", "XXXX"));
         // Act: filter by country 'X'
         var resp = await AlbaHost.Scenario(api =>
         {
             api.Get.Url(
-                $"/api/references/products?filter=%7B%0A%20%20%22country%22%3A%20%22X%22%7D&pageNumber=1&pageSize=10"
+                $"/api/references/products?filter=%7B%0A%20%20%22country%22%3A%20%22XXXX%22%7D&pageNumber=1&pageSize=10"
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
         result.Should().NotBeNull();
         result!.Count.Should().Be(2);
-        result.All(x => x.Country == "X").Should().BeTrue();
+        result.All(x => x.Country == "XXXX").Should().BeTrue();
     }
 
     [Fact]
     public async Task GetAllProductsWithSortReturnsSortedAsync()
     {
         // Arrange
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
-        await productRepository.CreateProductAsync(new ProductCreateDto("C", "A", "X"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("A", "B", "Y"));
-        await productRepository.CreateProductAsync(new ProductCreateDto("B", "C", "Z"));
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        await productService.CreateProductAsync(new ProductCreateDto("CCCC", "AAAA", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("AAAA", "BBBB", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("BBBB", "CCCC", "ZZZZ"));
         // Act: sort by name ascending
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -134,7 +140,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
         result.Should().NotBeNull();
         result!.Count.Should().Be(3);
-        result.Select(x => x.Name).Should().ContainInOrder("A", "B", "C");
+        result.Select(x => x.Name).Should().ContainInOrder("AAAA", "BBBB", "CCCC");
     }
 
     [Fact]

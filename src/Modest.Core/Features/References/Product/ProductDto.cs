@@ -6,6 +6,7 @@ public record ProductDto(
     DateTimeOffset? CreatedAt,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? DeletedAt,
+    string Code,
     string FullName,
     string Name,
     string Manufacturer,
