@@ -152,9 +152,21 @@ public class ProductRepository : IProductRepository
     )
     {
         var filterBuilder = Builders<ProductEntity>.Filter;
-        var filter = filterBuilder.Eq(x => x.IsDeleted, false);
+        var filter = filterBuilder.Empty;
+
         if (request.Filter != null)
         {
+            // Handle ShowDeleted filter
+            if (request.Filter.ShowDeleted.HasValue)
+            {
+                filter &= filterBuilder.Eq(x => x.IsDeleted, request.Filter.ShowDeleted.Value);
+            }
+            else
+            {
+                // Default: only show non-deleted items
+                filter &= filterBuilder.Eq(x => x.IsDeleted, false);
+            }
+
             if (!string.IsNullOrEmpty(request.Filter.SearchText))
             {
                 filter &= filterBuilder.Regex(
@@ -172,6 +184,11 @@ public class ProductRepository : IProductRepository
             {
                 filter &= filterBuilder.Eq(x => x.Country, request.Filter.Country);
             }
+        }
+        else
+        {
+            // Default: only show non-deleted items when no filter is provided
+            filter = filterBuilder.Eq(x => x.IsDeleted, false);
         }
 
         var query = _collection.Find(filter);

@@ -155,4 +155,110 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         result.Should().NotBeNull();
         result!.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetAllProductsWithShowDeletedFalseReturnsOnlyActiveAsync()
+    {
+        // Arrange: create 3 products and delete one
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
+        var p1 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active1", "Man1", "Cou1")
+        );
+        var p2 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active2", "Man2", "Cou2")
+        );
+        var p3 = await productService.CreateProductAsync(
+            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+        );
+
+        await productRepository.DeleteProductAsync(p3.Id);
+
+        // Act: filter with ShowDeleted = false
+        var resp = await AlbaHost.Scenario(api =>
+        {
+            api.Get.Url(
+                $"/api/references/products?filter=%7B%0A%20%20%22showDeleted%22%3A%20false%7D&pageNumber=1&pageSize=10"
+            );
+            api.StatusCodeShouldBe(HttpStatusCode.OK);
+        });
+        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+
+        // Assert: should return only active products
+        result.Should().NotBeNull();
+        result!.Count.Should().Be(2);
+        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
+        result.Select(x => x.Id).Should().NotContain(p3.Id);
+    }
+
+    [Fact]
+    public async Task GetAllProductsWithShowDeletedTrueReturnsOnlyDeletedAsync()
+    {
+        // Arrange: create 3 products and delete one
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
+        var p1 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active1", "Man1", "Cou1")
+        );
+        var p2 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active2", "Man2", "Cou2")
+        );
+        var p3 = await productService.CreateProductAsync(
+            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+        );
+
+        await productRepository.DeleteProductAsync(p3.Id);
+
+        // Act: filter with ShowDeleted = true
+        var resp = await AlbaHost.Scenario(api =>
+        {
+            api.Get.Url(
+                $"/api/references/products?filter=%7B%0A%20%20%22showDeleted%22%3A%20true%7D&pageNumber=1&pageSize=10"
+            );
+            api.StatusCodeShouldBe(HttpStatusCode.OK);
+        });
+        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+
+        // Assert: should return only deleted products
+        result.Should().NotBeNull();
+        result!.Count.Should().Be(1);
+        result[0].Id.Should().Be(p3.Id);
+        result.Select(x => x.Id).Should().NotContain([p1.Id, p2.Id]);
+    }
+
+    [Fact]
+    public async Task GetAllProductsWithoutShowDeletedReturnsOnlyActiveByDefaultAsync()
+    {
+        // Arrange: create 3 products and delete one
+        var productService = AlbaHost.Services.GetRequiredService<IProductService>();
+        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
+
+        var p1 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active1", "Man1", "Cou1")
+        );
+        var p2 = await productService.CreateProductAsync(
+            new ProductCreateDto("Active2", "Man2", "Cou2")
+        );
+        var p3 = await productService.CreateProductAsync(
+            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+        );
+
+        await productRepository.DeleteProductAsync(p3.Id);
+
+        // Act: no ShowDeleted filter (should default to false)
+        var resp = await AlbaHost.Scenario(api =>
+        {
+            api.Get.Url($"/api/references/products?pageNumber=1&pageSize=10");
+            api.StatusCodeShouldBe(HttpStatusCode.OK);
+        });
+        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+
+        // Assert: should return only active products by default
+        result.Should().NotBeNull();
+        result!.Count.Should().Be(2);
+        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
+        result.Select(x => x.Id).Should().NotContain(p3.Id);
+    }
 }
