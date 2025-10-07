@@ -5,9 +5,11 @@ namespace Modest.Core.Features.Documents.DocumentInboundDelivery;
 public record DocumentInboundDeliveryLineItemDto(
     Guid Id,
     ProductLookupDto Product,
-    decimal Quantity,
+    int UnitQuantity,
+    int PieceQuantity,
     decimal UnitPrice,
     decimal PiecePrice,
     decimal TotalPrice,
+    decimal VAT,
     string? Comment
 );
