@@ -14,7 +14,7 @@ public class GetProductByIdEndpointTests(WebFixture webFixture) : IntegrationTes
         // Arrange: create a product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var entity = await productService.CreateProductAsync(
-            new ProductCreateDto("TestProd", "TestMan", "TestLand")
+            new ProductCreateDto("TestProd", "TestMan", "TestLand", 1)
         );
         // Act
         var resp = await AlbaHost.Scenario(api =>

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Modest.Core.Common.Models;
+using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -9,12 +10,15 @@ namespace Modest.Data.Features.References.Product;
 public class ProductRepository : IProductRepository
 {
     private const string CollectionName = "products";
+    private static readonly char[] _wordSeparators = [' ', '\t', '\n', '\r'];
 
     private readonly IMongoCollection<ProductEntity> _collection;
+    private readonly ICurrentUserProvider _currentUserProvider;
 
-    public ProductRepository(IMongoDatabase database)
+    public ProductRepository(IMongoDatabase database, ICurrentUserProvider currentUserProvider)
     {
         _collection = database.GetCollection<ProductEntity>(CollectionName);
+        _currentUserProvider = currentUserProvider;
 
         // Ensure index for Code (unique)
         var codeIndexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.Code);
@@ -59,14 +63,18 @@ public class ProductRepository : IProductRepository
         session.StartTransaction();
         try
         {
+            var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
             var entity = new ProductEntity
             {
                 Code = code,
                 Name = productCreateDto.Name,
                 Manufacturer = productCreateDto.Manufacturer,
                 Country = productCreateDto.Country,
+                PieceCountInUnit = productCreateDto.PieceCountInUnit,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
+                CreatedBy = currentUser,
+                UpdatedBy = currentUser,
                 IsDeleted = false,
             };
 
@@ -84,10 +92,13 @@ public class ProductRepository : IProductRepository
                 // Undo delete (restore)
                 duplicate.IsDeleted = false;
                 duplicate.DeletedAt = null;
+                duplicate.DeletedBy = null;
                 duplicate.Name = productCreateDto.Name;
                 duplicate.Manufacturer = productCreateDto.Manufacturer;
                 duplicate.Country = productCreateDto.Country;
+                duplicate.PieceCountInUnit = productCreateDto.PieceCountInUnit;
                 duplicate.UpdatedAt = DateTime.UtcNow;
+                duplicate.UpdatedBy = currentUser;
                 await _collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
                 await session.CommitTransactionAsync();
                 return duplicate.ToProductDto();
@@ -106,6 +117,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
     {
+        var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
         var entity =
             await _collection
                 .Find(x => x.Id == productUpdateDto.Id && !x.IsDeleted)
@@ -113,7 +125,9 @@ public class ProductRepository : IProductRepository
         entity.Name = productUpdateDto.Name;
         entity.Manufacturer = productUpdateDto.Manufacturer;
         entity.Country = productUpdateDto.Country;
+        entity.PieceCountInUnit = productUpdateDto.PieceCountInUnit;
         entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedBy = currentUser;
         var duplicate = await _collection
             .Find(x => x.FullName == entity.FullName)
             .FirstOrDefaultAsync();
@@ -134,6 +148,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<bool> DeleteProductAsync(Guid id)
     {
+        var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
         var entity = await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
         if (entity == null)
         {
@@ -142,6 +157,7 @@ public class ProductRepository : IProductRepository
 
         entity.IsDeleted = true;
         entity.DeletedAt = DateTime.UtcNow;
+        entity.DeletedBy = currentUser;
         var result = await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;
     }
@@ -282,7 +298,7 @@ public class ProductRepository : IProductRepository
         return entity?.ToProductDto();
     }
 
-    public async Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(
+    public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
@@ -290,10 +306,24 @@ public class ProductRepository : IProductRepository
         var filter = filterBuilder.Eq(x => x.IsDeleted, false);
         if (!string.IsNullOrEmpty(request.Filter))
         {
-            filter &= filterBuilder.Regex(
-                x => x.Name,
-                new BsonRegularExpression(request.Filter, "i")
+            // Split the search text into words and create a filter for each word
+            var words = request.Filter.Split(
+                _wordSeparators,
+                StringSplitOptions.RemoveEmptyEntries
             );
+            var wordFilters = new List<FilterDefinition<ProductEntity>>();
+            foreach (var word in words)
+            {
+                wordFilters.Add(
+                    filterBuilder.Regex(x => x.FullName, new BsonRegularExpression(word, "i"))
+                );
+            }
+
+            // Combine all word filters with AND logic (all words must match)
+            if (wordFilters.Count > 0)
+            {
+                filter &= filterBuilder.And(wordFilters);
+            }
         }
 
         var query = _collection.Find(filter);
@@ -302,8 +332,10 @@ public class ProductRepository : IProductRepository
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Limit(request.PageSize)
             .ToListAsync();
-        var dtos = items.Select(x => new LookupDto(x.Id, x.Name)).ToList();
-        return new PaginatedResponse<LookupDto>
+        var dtos = items
+            .Select(x => new ProductLookupDto(x.Id, x.FullName, x.PieceCountInUnit))
+            .ToList();
+        return new PaginatedResponse<ProductLookupDto>
         {
             Items = dtos,
             TotalCount = (int)total,

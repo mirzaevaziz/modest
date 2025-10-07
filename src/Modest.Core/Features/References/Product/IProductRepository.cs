@@ -8,7 +8,9 @@ public interface IProductRepository
         PaginatedRequest<ProductFilter> request,
         IEnumerable<SortFieldRequest>? sortFields
     );
-    Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
+        PaginatedRequest<string> request
+    );
     Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
         PaginatedRequest<string> request
     );

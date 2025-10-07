@@ -15,4 +15,5 @@ public class ProductEntity : AuditableEntity
     public required string Name { get; set; }
     public required string Manufacturer { get; set; }
     public required string Country { get; set; }
+    public int PieceCountInUnit { get; set; }
 }

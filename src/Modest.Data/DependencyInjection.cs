@@ -2,8 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using Modest.Core.Features.Utils.SequenceNumber;
+using Modest.Data.Common;
 using Modest.Data.Features.References.Product;
 using Modest.Data.Features.Utils.SequenceNumber;
 using MongoDB.Bson.Serialization;
@@ -38,6 +40,9 @@ public static class DependencyInjection
                 sp.GetRequiredService<IMongoClient>().GetDatabase(settings.DatabaseName)
             );
         }
+
+        // Register current user provider
+        builder.Services.AddScoped<ICurrentUserProvider, DefaultCurrentUserProvider>();
 
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
         builder.Services.AddScoped<ISequenceNumberRepository, SequenceNumberRepository>();

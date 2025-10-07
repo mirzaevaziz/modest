@@ -14,13 +14,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         // Arrange: add 3 products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var p1 = await productService.CreateProductAsync(
-            new ProductCreateDto("AAAA", "M1111", "C1111")
+            new ProductCreateDto("AAAA", "M1111", "C1111", 1)
         );
         var p2 = await productService.CreateProductAsync(
-            new ProductCreateDto("BBBB", "M2222", "C2222")
+            new ProductCreateDto("BBBB", "M2222", "C2222", 1)
         );
         var p3 = await productService.CreateProductAsync(
-            new ProductCreateDto("CCCC", "M3333", "C3333")
+            new ProductCreateDto("CCCC", "M3333", "C3333", 1)
         );
         // Act
         var resp = await AlbaHost.Scenario(api =>
@@ -42,7 +42,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         for (var i = 1; i <= 15; i++)
         {
             await productService.CreateProductAsync(
-                new ProductCreateDto($"Prod{i}", $"Man{i}", $"Land{i}")
+                new ProductCreateDto($"Prod{i}", $"Man{i}", $"Land{i}", 1)
             );
         }
         // Act: page 2, size 10
@@ -61,8 +61,8 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
-        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY", 1));
         // Act: filter by name 'lpha'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -82,9 +82,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
-        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
-        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "AAAA", "ZZZZ"));
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "AAAA", "ZZZZ", 1));
         // Act: filter by manufacturer 'A'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -104,9 +104,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX"));
-        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY"));
-        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CCCC", "XXXX"));
+        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "XXXX", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "YYYY", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CCCC", "XXXX", 1));
         // Act: filter by country 'X'
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -126,9 +126,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("CCCC", "AAAA", "XXXX"));
-        await productService.CreateProductAsync(new ProductCreateDto("AAAA", "BBBB", "YYYY"));
-        await productService.CreateProductAsync(new ProductCreateDto("BBBB", "CCCC", "ZZZZ"));
+        await productService.CreateProductAsync(new ProductCreateDto("CCCC", "AAAA", "XXXX", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("AAAA", "BBBB", "YYYY", 1));
+        await productService.CreateProductAsync(new ProductCreateDto("BBBB", "CCCC", "ZZZZ", 1));
         // Act: sort by name ascending
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -164,13 +164,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
         var p1 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active1", "Man1", "Cou1")
+            new ProductCreateDto("Active1", "Man1", "Cou1", 1)
         );
         var p2 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active2", "Man2", "Cou2")
+            new ProductCreateDto("Active2", "Man2", "Cou2", 1)
         );
         var p3 = await productService.CreateProductAsync(
-            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+            new ProductCreateDto("Deleted1", "Man3", "Cou3", 1)
         );
 
         await productRepository.DeleteProductAsync(p3.Id);
@@ -200,13 +200,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
         var p1 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active1", "Man1", "Cou1")
+            new ProductCreateDto("Active1", "Man1", "Cou1", 1)
         );
         var p2 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active2", "Man2", "Cou2")
+            new ProductCreateDto("Active2", "Man2", "Cou2", 1)
         );
         var p3 = await productService.CreateProductAsync(
-            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+            new ProductCreateDto("Deleted1", "Man3", "Cou3", 1)
         );
 
         await productRepository.DeleteProductAsync(p3.Id);
@@ -236,13 +236,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
         var p1 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active1", "Man1", "Cou1")
+            new ProductCreateDto("Active1", "Man1", "Cou1", 1)
         );
         var p2 = await productService.CreateProductAsync(
-            new ProductCreateDto("Active2", "Man2", "Cou2")
+            new ProductCreateDto("Active2", "Man2", "Cou2", 1)
         );
         var p3 = await productService.CreateProductAsync(
-            new ProductCreateDto("Deleted1", "Man3", "Cou3")
+            new ProductCreateDto("Deleted1", "Man3", "Cou3", 1)
         );
 
         await productRepository.DeleteProductAsync(p3.Id);

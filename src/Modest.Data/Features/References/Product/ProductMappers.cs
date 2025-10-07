@@ -13,11 +13,15 @@ public static class ProductMappers
             entity.CreatedAt,
             entity.UpdatedAt,
             entity.DeletedAt,
+            entity.CreatedBy,
+            entity.UpdatedBy,
+            entity.DeletedBy,
             entity.Code,
             entity.FullName,
             entity.Name,
             entity.Manufacturer,
-            entity.Country
+            entity.Country,
+            entity.PieceCountInUnit
         );
     }
 

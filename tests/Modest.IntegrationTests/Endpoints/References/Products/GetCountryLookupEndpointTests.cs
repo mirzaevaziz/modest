@@ -39,7 +39,7 @@ public class GetCountryLookupEndpointTests(WebFixture webFixture) : IntegrationT
         for (var i = 1; i <= 15; i++)
         {
             await productService.CreateProductAsync(
-                new ProductCreateDto($"Prod{i}", $"Man{i}", countries[(i - 1) % 5])
+                new ProductCreateDto($"Prod{i}", $"Man{i}", countries[(i - 1) % 5], 1)
             );
         }
         // Page 1, size 3
@@ -60,9 +60,15 @@ public class GetCountryLookupEndpointTests(WebFixture webFixture) : IntegrationT
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AAAA", "AlphaLand"));
-        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BBBB", "BetaLand"));
-        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "CCCC", "GammaLand"));
+        await productService.CreateProductAsync(
+            new ProductCreateDto("Alpha", "AAAA", "AlphaLand", 1)
+        );
+        await productService.CreateProductAsync(
+            new ProductCreateDto("Beta", "BBBB", "BetaLand", 1)
+        );
+        await productService.CreateProductAsync(
+            new ProductCreateDto("Gamma", "CCCC", "GammaLand", 1)
+        );
         // Search for 'Beta'
         var resp = await AlbaHost.Scenario(api =>
         {

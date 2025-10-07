@@ -40,7 +40,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
         for (var i = 1; i <= 15; i++)
         {
             await productService.CreateProductAsync(
-                new ProductCreateDto($"Prod{i}", manufacturers[(i - 1) % 5], $"Land{i}")
+                new ProductCreateDto($"Prod{i}", manufacturers[(i - 1) % 5], $"Land{i}", 1)
             );
         }
         // Page 1, size 3
@@ -61,9 +61,13 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        await productService.CreateProductAsync(new ProductCreateDto("Alpha", "AlphaMan", "XXXX"));
-        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BetaMan", "YYYY"));
-        await productService.CreateProductAsync(new ProductCreateDto("Gamma", "GammaMan", "ZZZZ"));
+        await productService.CreateProductAsync(
+            new ProductCreateDto("Alpha", "AlphaMan", "XXXX", 1)
+        );
+        await productService.CreateProductAsync(new ProductCreateDto("Beta", "BetaMan", "YYYY", 1));
+        await productService.CreateProductAsync(
+            new ProductCreateDto("Gamma", "GammaMan", "ZZZZ", 1)
+        );
         // Search for 'Beta'
         var resp = await AlbaHost.Scenario(api =>
         {

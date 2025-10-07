@@ -13,10 +13,9 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     {
         // Arrange: create a product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
-        var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
 
         var entity = await productService.CreateProductAsync(
-            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
+            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand", 1)
         );
         // Act: delete the product
         var resp = await AlbaHost.Scenario(api =>
@@ -25,7 +24,7 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         // Assert: product is deleted
-        var inDb = await productRepository.GetProductByIdAsync(entity.Id);
+        var inDb = await productService.GetProductByIdAsync(entity.Id);
         inDb.Should().NotBeNull();
         inDb!.IsDeleted.Should().BeTrue();
         inDb.DeletedAt.Should().NotBeNull();
@@ -50,7 +49,7 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
 
         var entity = await productService.CreateProductAsync(
-            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand")
+            new ProductCreateDto("DeleteMe", "DeleteMan", "DeleteLand", 1)
         );
         // Act: delete once
         var resp1 = await AlbaHost.Scenario(api =>

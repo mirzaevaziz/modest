@@ -11,7 +11,9 @@ public interface IProductService
         PaginatedRequest<ProductFilter> request,
         IEnumerable<SortFieldRequest>? sortFields
     );
-    Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(PaginatedRequest<string> request);
+    Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
+        PaginatedRequest<string> request
+    );
     Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
         PaginatedRequest<string> request
     );
@@ -42,7 +44,7 @@ public class ProductService(
         return await productRepository.GetAllProductsAsync(request, sortFields);
     }
 
-    public async Task<PaginatedResponse<LookupDto>> GetProductLookupDtosAsync(
+    public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {

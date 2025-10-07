@@ -6,9 +6,13 @@ public record ProductDto(
     DateTimeOffset? CreatedAt,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? DeletedAt,
+    string? CreatedBy,
+    string? UpdatedBy,
+    string? DeletedBy,
     string Code,
     string FullName,
     string Name,
     string Manufacturer,
-    string Country
+    string Country,
+    int PieceCountInUnit
 );

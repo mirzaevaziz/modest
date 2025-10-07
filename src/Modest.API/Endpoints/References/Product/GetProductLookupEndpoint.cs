@@ -5,7 +5,7 @@ using Modest.Core.Features.References.Product;
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetProductLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResponse<LookupDto>>
+    : Endpoint<PaginatedRequest<string>, PaginatedResponse<ProductLookupDto>>
 {
     public override void Configure()
     {
