@@ -22,8 +22,10 @@ public class ProductUpdateDtoValidator : AbstractValidator<ProductUpdateDto>
             .MaximumLength(CountryMaxLength);
 
         RuleFor(x => x.PieceCountInUnit)
-            .GreaterThan(0)
-            .LessThan(10001)
-            .WithMessage("PieceCountInUnit must be greater than 0 and less than 10001.");
+            .GreaterThanOrEqualTo(PieceCountInUnitMin)
+            .LessThanOrEqualTo(PieceCountInUnitMax)
+            .WithMessage(
+                $"PieceCountInUnit must be between {PieceCountInUnitMin} and {PieceCountInUnitMax}."
+            );
     }
 }

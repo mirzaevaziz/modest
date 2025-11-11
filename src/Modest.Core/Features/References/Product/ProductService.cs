@@ -31,11 +31,6 @@ public class ProductService(
     ILogger<ProductService> logger
 ) : IProductService
 {
-    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
-    {
-        return await productRepository.GetProductByIdAsync(id);
-    }
-
     public async Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
         PaginatedRequest<ProductFilter> request,
         IEnumerable<SortFieldRequest>? sortFields
@@ -63,6 +58,11 @@ public class ProductService(
     )
     {
         return await productRepository.GetCountryLookupDtosAsync(request);
+    }
+
+    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
+    {
+        return await productRepository.GetProductByIdAsync(id);
     }
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto)

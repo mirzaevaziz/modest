@@ -1,3 +1,5 @@
+using Modest.Core.Features.References.Supplier;
+
 namespace Modest.Core.Features.Documents.DocumentInboundDelivery;
 
 public record DocumentInboundDeliveryDto(
@@ -6,13 +8,18 @@ public record DocumentInboundDeliveryDto(
     DateTimeOffset? CreatedAt,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? DeletedAt,
+    string? CreatedBy,
+    string? UpdatedBy,
+    string? DeletedBy,
     string Number,
     DateTimeOffset Date,
-    string SupplierName,
-    string SupplierCode,
-    bool IsSigned,
+    SupplierLookupDto Supplier,
+    string? SupplierDocumentNumber,
+    DateTimeOffset? SupplierDocumentDate,
+    DocumentInboundDeliveryStatus CurrentStatus,
     string? Comment,
     int LineItemCount,
-    decimal TotalAmount,
-    List<DocumentInboundDeliveryLineItemDto> LineItems
+    decimal TotalCost,
+    List<DocumentInboundDeliveryLineItemDto> LineItemList,
+    List<DocumentInboundDeliveryStatusHistoryDto> StatusHistoryList
 );

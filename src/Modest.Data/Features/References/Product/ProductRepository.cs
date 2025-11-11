@@ -1,7 +1,9 @@
 using FluentValidation;
+using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
+using Modest.Data.Common;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -9,8 +11,7 @@ namespace Modest.Data.Features.References.Product;
 
 public class ProductRepository : IProductRepository
 {
-    private const string CollectionName = "products";
-    private static readonly char[] _wordSeparators = [' ', '\t', '\n', '\r'];
+    private const string CollectionName = "product";
 
     private readonly IMongoCollection<ProductEntity> _collection;
     private readonly ICurrentUserProvider _currentUserProvider;
@@ -57,13 +58,181 @@ public class ProductRepository : IProductRepository
         }
     }
 
+    public async Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
+        PaginatedRequest<ProductFilter> request,
+        IEnumerable<SortFieldRequest>? sortFields
+    )
+    {
+        var filterBuilder = Builders<ProductEntity>.Filter;
+        var filter = filterBuilder.Empty;
+
+        if (request.Filter != null)
+        {
+            // Handle ShowDeleted filter
+            if (request.Filter.ShowDeleted.HasValue)
+            {
+                filter &= filterBuilder.Eq(x => x.IsDeleted, request.Filter.ShowDeleted.Value);
+            }
+            else
+            {
+                // Default: only show non-deleted items
+                filter &= filterBuilder.Eq(x => x.IsDeleted, false);
+            }
+
+            if (!string.IsNullOrEmpty(request.Filter.SearchText))
+            {
+                filter &= MongoFilterHelper.BuildWordSearchFilter<ProductEntity>(
+                    request.Filter.SearchText,
+                    x => x.FullName
+                );
+            }
+
+            if (!string.IsNullOrEmpty(request.Filter.Manufacturer))
+            {
+                filter &= filterBuilder.Eq(x => x.Manufacturer, request.Filter.Manufacturer);
+            }
+
+            if (!string.IsNullOrEmpty(request.Filter.Country))
+            {
+                filter &= filterBuilder.Eq(x => x.Country, request.Filter.Country);
+            }
+        }
+        else
+        {
+            // Default: only show non-deleted items when no filter is provided
+            filter = filterBuilder.Eq(x => x.IsDeleted, false);
+        }
+
+        var query = _collection.Find(filter);
+        // Sorting
+        if (sortFields != null)
+        {
+            var sortDef = Builders<ProductEntity>.Sort.Combine(
+                sortFields.Select(sf =>
+                    sf.Ascending
+                        ? Builders<ProductEntity>.Sort.Ascending(sf.FieldName)
+                        : Builders<ProductEntity>.Sort.Descending(sf.FieldName)
+                )
+            );
+            query = query.Sort(sortDef);
+        }
+
+        var total = await query.CountDocumentsAsync();
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Limit(request.PageSize)
+            .ToListAsync();
+        var dtos = items.Select(x => x.ToProductDto()).ToList();
+        return new PaginatedResponse<ProductDto>
+        {
+            Items = dtos,
+            TotalCount = (int)total,
+            PageSize = request.PageSize,
+            PageNumber = request.PageNumber,
+        };
+    }
+
+    public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var filterBuilder = Builders<ProductEntity>.Filter;
+        var filter = filterBuilder.Eq(x => x.IsDeleted, false);
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            filter &= MongoFilterHelper.BuildWordSearchFilter<ProductEntity>(
+                request.Filter,
+                x => x.FullName
+            );
+        }
+
+        var query = _collection.Find(filter);
+        var total = await query.CountDocumentsAsync();
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Limit(request.PageSize)
+            .ToListAsync();
+        var dtos = items
+            .Select(x => new ProductLookupDto(x.Id, x.FullName, x.PieceCountInUnit))
+            .ToList();
+        return new PaginatedResponse<ProductLookupDto>
+        {
+            Items = dtos,
+            TotalCount = (int)total,
+            PageSize = request.PageSize,
+            PageNumber = request.PageNumber,
+        };
+    }
+
+    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var manufacturers = await _collection.DistinctAsync<string>(
+            "Manufacturer",
+            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
+        );
+        var list = await manufacturers.ToListAsync();
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            list = list.Where(m => m.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        var total = list.Count;
+        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToList();
+        return new PaginatedResponse<string>
+        {
+            Items = paged,
+            TotalCount = total,
+            PageSize = request.PageSize,
+            PageNumber = request.PageNumber,
+        };
+    }
+
+    public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        var countries = await _collection.DistinctAsync<string>(
+            "Country",
+            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
+        );
+        var list = await countries.ToListAsync();
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            list = list.Where(c => c.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        var total = list.Count;
+        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToList();
+        return new PaginatedResponse<string>
+        {
+            Items = paged,
+            TotalCount = total,
+            PageSize = request.PageSize,
+            PageNumber = request.PageNumber,
+        };
+    }
+
+    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
+    {
+        var entity = await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
+        return entity?.ToProductDto();
+    }
+
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto, string code)
     {
         using var session = await _collection.Database.Client.StartSessionAsync();
         session.StartTransaction();
         try
         {
-            var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
+            var currentUser = _currentUserProvider.GetCurrentUsername();
             var entity = new ProductEntity
             {
                 Code = code,
@@ -117,7 +286,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
     {
-        var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
+        var currentUser = _currentUserProvider.GetCurrentUsername();
         var entity =
             await _collection
                 .Find(x => x.Id == productUpdateDto.Id && !x.IsDeleted)
@@ -129,15 +298,15 @@ public class ProductRepository : IProductRepository
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = currentUser;
         var duplicate = await _collection
-            .Find(x => x.FullName == entity.FullName)
+            .Find(x => x.FullName == entity.FullName && x.Id != entity.Id)
             .FirstOrDefaultAsync();
-        if (duplicate is not null && duplicate.Id != entity.Id)
+        if (duplicate is not null)
         {
             if (!duplicate.IsDeleted)
             {
                 throw new ValidationException($"Product with the same FullName already exists.");
             }
-            // Undo delete (restore)
+            // Change the name of the deleted duplicate to avoid conflict
             duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
             await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
         }
@@ -148,7 +317,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<bool> DeleteProductAsync(Guid id)
     {
-        var currentUser = _currentUserProvider.GetCurrentUser()?.Username ?? "System";
+        var currentUser = _currentUserProvider.GetCurrentUsername();
         var entity = await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
         if (entity == null)
         {
@@ -160,187 +329,5 @@ public class ProductRepository : IProductRepository
         entity.DeletedBy = currentUser;
         var result = await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;
-    }
-
-    public async Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
-        PaginatedRequest<ProductFilter> request,
-        IEnumerable<SortFieldRequest>? sortFields
-    )
-    {
-        var filterBuilder = Builders<ProductEntity>.Filter;
-        var filter = filterBuilder.Empty;
-
-        if (request.Filter != null)
-        {
-            // Handle ShowDeleted filter
-            if (request.Filter.ShowDeleted.HasValue)
-            {
-                filter &= filterBuilder.Eq(x => x.IsDeleted, request.Filter.ShowDeleted.Value);
-            }
-            else
-            {
-                // Default: only show non-deleted items
-                filter &= filterBuilder.Eq(x => x.IsDeleted, false);
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter.SearchText))
-            {
-                filter &= filterBuilder.Regex(
-                    x => x.FullName,
-                    new BsonRegularExpression(request.Filter.SearchText, "i")
-                );
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter.Manufacturer))
-            {
-                filter &= filterBuilder.Eq(x => x.Manufacturer, request.Filter.Manufacturer);
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter.Country))
-            {
-                filter &= filterBuilder.Eq(x => x.Country, request.Filter.Country);
-            }
-        }
-        else
-        {
-            // Default: only show non-deleted items when no filter is provided
-            filter = filterBuilder.Eq(x => x.IsDeleted, false);
-        }
-
-        var query = _collection.Find(filter);
-        // Sorting
-        if (sortFields != null)
-        {
-            var sortDef = Builders<ProductEntity>.Sort.Combine(
-                sortFields.Select(sf =>
-                    sf.Ascending
-                        ? Builders<ProductEntity>.Sort.Ascending(sf.FieldName)
-                        : Builders<ProductEntity>.Sort.Descending(sf.FieldName)
-                )
-            );
-            query = query.Sort(sortDef);
-        }
-
-        var total = await query.CountDocumentsAsync();
-        var items = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
-        var dtos = items.Select(x => x.ToProductDto()).ToList();
-        return new PaginatedResponse<ProductDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
-    }
-
-    public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
-        PaginatedRequest<string> request
-    )
-    {
-        var countries = await _collection.DistinctAsync<string>(
-            "Country",
-            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
-        );
-        var list = await countries.ToListAsync();
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            list = list.Where(c => c.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        var total = list.Count;
-        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
-        return new PaginatedResponse<string>
-        {
-            Items = paged,
-            TotalCount = total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
-    }
-
-    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
-        PaginatedRequest<string> request
-    )
-    {
-        var manufacturers = await _collection.DistinctAsync<string>(
-            "Manufacturer",
-            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
-        );
-        var list = await manufacturers.ToListAsync();
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            list = list.Where(m => m.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        var total = list.Count;
-        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
-        return new PaginatedResponse<string>
-        {
-            Items = paged,
-            TotalCount = total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
-    }
-
-    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
-    {
-        var entity = await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
-        return entity?.ToProductDto();
-    }
-
-    public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
-        PaginatedRequest<string> request
-    )
-    {
-        var filterBuilder = Builders<ProductEntity>.Filter;
-        var filter = filterBuilder.Eq(x => x.IsDeleted, false);
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            // Split the search text into words and create a filter for each word
-            var words = request.Filter.Split(
-                _wordSeparators,
-                StringSplitOptions.RemoveEmptyEntries
-            );
-            var wordFilters = new List<FilterDefinition<ProductEntity>>();
-            foreach (var word in words)
-            {
-                wordFilters.Add(
-                    filterBuilder.Regex(x => x.FullName, new BsonRegularExpression(word, "i"))
-                );
-            }
-
-            // Combine all word filters with AND logic (all words must match)
-            if (wordFilters.Count > 0)
-            {
-                filter &= filterBuilder.And(wordFilters);
-            }
-        }
-
-        var query = _collection.Find(filter);
-        var total = await query.CountDocumentsAsync();
-        var items = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
-        var dtos = items
-            .Select(x => new ProductLookupDto(x.Id, x.FullName, x.PieceCountInUnit))
-            .ToList();
-        return new PaginatedResponse<ProductLookupDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
     }
 }

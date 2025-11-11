@@ -8,7 +8,9 @@ using Modest.Core.Features.Utils.SequenceNumber;
 using Modest.Data.Common;
 using Modest.Data.Features.References.Product;
 using Modest.Data.Features.Utils.SequenceNumber;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
@@ -50,6 +52,15 @@ public static class DependencyInjection
         // Register validators from the current assembly
         builder.Services.AddValidatorsFromAssemblyContaining<ProductRepository>();
 
-        BsonSerializer.RegisterSerializer(new GuidSerializer(MongoDB.Bson.BsonType.String));
+        // Configure MongoDB conventions
+        var conventionPack = new ConventionPack
+        {
+            new EnumRepresentationConvention(BsonType.String), // Store all enums as strings
+            new IgnoreExtraElementsConvention(true), // Apply to all types
+        };
+        ConventionRegistry.Register("EnumStringConvention", conventionPack, type => true);
+        ConventionRegistry.Register("IgnoreExtraElements", conventionPack, type => true);
+
+        BsonSerializer.RegisterSerializer(new GuidSerializer(BsonType.String));
     }
 }

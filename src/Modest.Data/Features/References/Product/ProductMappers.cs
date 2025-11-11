@@ -29,4 +29,9 @@ public static class ProductMappers
     {
         return new LookupDto(entity.Id, entity.FullName);
     }
+
+    public static ProductLookupDto ToDto(this ProductLookupEntity entity)
+    {
+        return new ProductLookupDto(entity.Id, entity.Name, entity.PieceCountInUnit);
+    }
 }

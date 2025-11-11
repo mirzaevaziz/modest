@@ -1,4 +1,4 @@
-namespace Modest.Core.Features.References.Product;
+﻿namespace Modest.Core.Features.References.Product;
 
 public static class ProductConstants
 {
@@ -8,4 +8,6 @@ public static class ProductConstants
     public const int NameMinLength = 3;
     public const int ManufacturerMinLength = 3;
     public const int CountryMinLength = 3;
+    public const int PieceCountInUnitMin = 1;
+    public const int PieceCountInUnitMax = 10000;
 }

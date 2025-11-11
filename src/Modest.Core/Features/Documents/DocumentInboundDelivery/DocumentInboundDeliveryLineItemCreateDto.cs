@@ -2,12 +2,10 @@ using Modest.Core.Features.References.Product;
 
 namespace Modest.Core.Features.Documents.DocumentInboundDelivery;
 
-public record DocumentInboundDeliveryLineItemDto(
-    Guid Id,
+public record DocumentInboundDeliveryLineItemCreateDto(
     ProductLookupDto Product,
     decimal Quantity,
     decimal Price,
-    decimal TotalPrice,
     decimal VAT,
     string? Comment
 );
