@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
+using Modest.Core.Features.References.Supplier;
 using Modest.Core.Features.Utils.SequenceNumber;
 using Modest.Data.Common;
 using Modest.Data.Features.References.Product;
+using Modest.Data.Features.References.Supplier;
 using Modest.Data.Features.Utils.SequenceNumber;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -47,6 +49,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<ICurrentUserProvider, DefaultCurrentUserProvider>();
 
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
+        builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
         builder.Services.AddScoped<ISequenceNumberRepository, SequenceNumberRepository>();
 
         // Register validators from the current assembly

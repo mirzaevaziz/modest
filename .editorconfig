@@ -52,6 +52,10 @@ dotnet_diagnostic.CA1852.severity = none
 # ReSharper properties
 resharper_align_multiline_array_and_object_initializer = false
 
+# Test files - allow underscores in method names for Given_When_Then pattern
+[*Tests.cs]
+dotnet_diagnostic.CA1707.severity = none
+
 #### .NET Coding Conventions ####
 
 # Field preferences
@@ -177,9 +181,17 @@ dotnet_naming_rule.types_should_be_pascal_case.severity = error
 dotnet_naming_rule.types_should_be_pascal_case.symbols = types
 dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case_style
 
+dotnet_naming_rule.test_methods_can_use_underscores.severity = none
+dotnet_naming_rule.test_methods_can_use_underscores.symbols = test_methods
+dotnet_naming_rule.test_methods_can_use_underscores.style = pascal_case_with_underscores
+
 dotnet_naming_rule.non_field_members_should_be_pascal_case.severity = error
 dotnet_naming_rule.non_field_members_should_be_pascal_case.symbols = non_field_members
 dotnet_naming_rule.non_field_members_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.test_methods_should_be_pascal_case_with_underscores.severity = none
+dotnet_naming_rule.test_methods_should_be_pascal_case_with_underscores.symbols = test_methods
+dotnet_naming_rule.test_methods_should_be_pascal_case_with_underscores.style = pascal_case_with_underscores
 
 dotnet_naming_rule.async_methods_should_be_ends_with_async.severity = error
 dotnet_naming_rule.async_methods_should_be_ends_with_async.symbols = async_method
@@ -214,6 +226,10 @@ dotnet_naming_symbols.non_field_members.required_modifiers =
 dotnet_naming_symbols.async_method.applicable_kinds = method
 dotnet_naming_symbols.async_method.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected, local
 dotnet_naming_symbols.async_method.required_modifiers = async
+
+dotnet_naming_symbols.test_methods.applicable_kinds = method
+dotnet_naming_symbols.test_methods.applicable_accessibilities = public
+dotnet_naming_symbols.test_methods.required_modifiers =
 
 dotnet_naming_symbols.private_field.applicable_kinds = field
 dotnet_naming_symbols.private_field.applicable_accessibilities = private
@@ -253,6 +269,12 @@ dotnet_naming_style.begins_with_underscore.required_prefix = _
 dotnet_naming_style.begins_with_underscore.required_suffix =
 dotnet_naming_style.begins_with_underscore.word_separator =
 dotnet_naming_style.begins_with_underscore.capitalization = camel_case
+
+dotnet_naming_style.pascal_case_with_underscores.required_prefix =
+dotnet_naming_style.pascal_case_with_underscores.required_suffix =
+dotnet_naming_style.pascal_case_with_underscores.word_separator = _
+dotnet_naming_style.pascal_case_with_underscores.capitalization = pascal_case
+
 csharp_style_prefer_method_group_conversion = true:suggestion
 csharp_style_prefer_null_check_over_type_check = true:suggestion
 csharp_style_prefer_local_over_anonymous_function = true:suggestion

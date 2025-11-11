@@ -9,7 +9,7 @@ namespace Modest.IntegrationTests.Endpoints.References.Products;
 public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTestBase(webFixture)
 {
     [Fact]
-    public async Task DeleteProductReturnsOkAndDeletesProductAsync()
+    public async Task Given_ValidProduct_When_Deleting_Then_ReturnsOkAndSoftDeletesAsync()
     {
         // Arrange: create a product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -31,7 +31,7 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task DeleteProductNotFoundReturnsOkFalseAsync()
+    public async Task Given_NonExistentId_When_Deleting_Then_ReturnsOkFalseAsync()
     {
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -43,7 +43,7 @@ public class DeleteProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task DeleteProductTwiceReturnsOkFalseSecondTimeAsync()
+    public async Task Given_AlreadyDeletedProduct_When_DeletingAgain_Then_ReturnsOkFalseAsync()
     {
         // Arrange: create a product
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();

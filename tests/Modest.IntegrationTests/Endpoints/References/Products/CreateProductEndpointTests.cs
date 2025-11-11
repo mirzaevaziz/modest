@@ -23,7 +23,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     [InlineData("TestProd", "TestMan", "", 1)]
     [InlineData("TestProd", "TestMan", "1", 1)]
     [InlineData("TestProd", "TestMan", "12", 1)]
-    public async Task CreateProductInvalidFieldsReturnsBadRequestAsync(
+    public async Task Given_InvalidFields_When_CreatingProduct_Then_ReturnsBadRequestAsync(
         string? name,
         string? manufacturer,
         string? country,
@@ -39,7 +39,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductLongStringsReturnsBadRequestAsync()
+    public async Task Given_LongName_When_CreatingProduct_Then_ReturnsBadRequestAsync()
     {
         var longStr = new string('a', 1001);
         var dto = new ProductCreateDto(longStr, longStr, longStr, 1);
@@ -51,7 +51,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductLongManufacturerReturnsBadRequestAsync()
+    public async Task Given_LongManufacturer_When_CreatingProduct_Then_ReturnsBadRequestAsync()
     {
         var longStr = new string('a', 1001);
         var dto = new ProductCreateDto("TestProduct", longStr, "TestCountry", 1);
@@ -63,7 +63,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductLongCountryReturnsBadRequestAsync()
+    public async Task Given_LongCountry_When_CreatingProduct_Then_ReturnsBadRequestAsync()
     {
         var longStr = new string('a', 1001);
         var dto = new ProductCreateDto("TestProduct", "TestManufacturer", longStr, 1);
@@ -75,7 +75,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductNullDtoReturnsBadRequestAsync()
+    public async Task Given_NullDto_When_CreatingProduct_Then_ReturnsBadRequestAsync()
     {
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -85,7 +85,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductReturnsOkAndProductAsync()
+    public async Task Given_ValidData_When_CreatingProduct_Then_ReturnsOkAndProductAsync()
     {
         // Arrange
         var dto = new ProductCreateDto("Test Product", "TestMan", "TestLand", 100);
@@ -116,7 +116,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductDuplicateReturnsBadRequestAsync()
+    public async Task Given_DuplicateProduct_When_Creating_Then_ReturnsBadRequestAsync()
     {
         var dto = new ProductCreateDto("UniqueProduct", "Man", "Land", 50);
         // First creation should succeed
@@ -134,7 +134,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     }
 
     [Fact]
-    public async Task CreateProductDeletedDuplicateReturnsOkAndProductAsync()
+    public async Task Given_DeletedDuplicate_When_Creating_Then_ReturnsOkAndProductAsync()
     {
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
         var productRepository = AlbaHost.Services.GetRequiredService<IProductRepository>();
@@ -176,7 +176,7 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     [InlineData(10001)]
     [InlineData(10002)]
     [InlineData(20000)]
-    public async Task CreateProductInvalidPieceCountInUnitReturnsBadRequestAsync(
+    public async Task Given_InvalidPieceCount_When_CreatingProduct_Then_ReturnsBadRequestAsync(
         int pieceCountInUnit
     )
     {
@@ -193,7 +193,9 @@ public class CreateProductEndpointTests(WebFixture mongoDbFixture)
     [InlineData(100)]
     [InlineData(5000)]
     [InlineData(10000)]
-    public async Task CreateProductValidPieceCountInUnitReturnsOkAsync(int pieceCountInUnit)
+    public async Task Given_ValidPieceCount_When_CreatingProduct_Then_ReturnsOkAsync(
+        int pieceCountInUnit
+    )
     {
         var dto = new ProductCreateDto(
             $"Product{pieceCountInUnit}",

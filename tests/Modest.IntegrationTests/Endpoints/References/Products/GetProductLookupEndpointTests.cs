@@ -10,18 +10,11 @@ namespace Modest.IntegrationTests.Endpoints.References.Products;
 public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationTestBase(webFixture)
 {
     [Fact]
-    public async Task GetProductLookupReturnsEmptyAsync()
+    public async Task Given_NoProducts_When_GettingLookup_Then_ReturnsEmptyAsync()
     {
-        // No products in DB
-        var req = new PaginatedRequest<string>
-        {
-            Filter = null,
-            PageNumber = 1,
-            PageSize = 10,
-        };
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page=1&pageSize=10");
+            api.Get.Url($"/api/references/products/lookup?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
@@ -31,7 +24,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     }
 
     [Fact]
-    public async Task GetProductLookupReturnsPagedResultsAsync()
+    public async Task Given_FifteenProducts_When_GettingLookup_Then_ReturnsPagedResultsAsync()
     {
         // Add 15 products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -45,7 +38,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
         // Page 1, size 10
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page=1&pageSize=10");
+            api.Get.Url($"/api/references/products/lookup?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
@@ -55,7 +48,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     }
 
     [Fact]
-    public async Task GetProductLookupWithSearchReturnsFilteredAsync()
+    public async Task Given_SearchFilter_When_GettingLookup_Then_ReturnsFilteredAsync()
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -82,20 +75,20 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [InlineData(1, 0)]
     [InlineData(-1, 10)]
     [InlineData(1, -5)]
-    public async Task GetProductLookupInvalidPagingReturnsEmptyAsync(int page, int pageSize)
+    public async Task Given_InvalidPaging_When_GettingLookup_Then_ReturnsBadRequestAsync(
+        int page,
+        int pageSize
+    )
     {
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page={page}&pageSize={pageSize}");
-            api.StatusCodeShouldBe(HttpStatusCode.OK);
+            api.Get.Url($"/api/references/products/lookup?pageNumber={page}&pageSize={pageSize}");
+            api.StatusCodeShouldBe(HttpStatusCode.BadRequest);
         });
-        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
-        result.Should().NotBeNull();
-        result!.Items.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task GetProductLookupWithLargeDatasetReturnsCorrectPaginationAsync()
+    public async Task Given_LargeDataset_When_GettingLookup_Then_ReturnsCorrectPaginationAsync()
     {
         // Add 100 products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -109,7 +102,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
         // Test first page
         var resp1 = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page=1&pageSize=20");
+            api.Get.Url($"/api/references/products/lookup?pageNumber=1&pageSize=20");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result1 = await resp1.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
@@ -120,7 +113,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
         // Test last page
         var resp2 = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page=5&pageSize=20");
+            api.Get.Url($"/api/references/products/lookup?pageNumber=5&pageSize=20");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result2 = await resp2.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
@@ -134,7 +127,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [InlineData("alpha")]
     [InlineData("AlPhA")]
     [InlineData("aLpHa")]
-    public async Task GetProductLookupSearchIsCaseInsensitiveAsync(string filter)
+    public async Task Given_CaseVariation_When_Searching_Then_IsCaseInsensitiveAsync(string filter)
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -154,7 +147,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     }
 
     [Fact]
-    public async Task GetProductLookupWithSpecialCharactersInFilterAsync()
+    public async Task Given_SpecialCharacters_When_Filtering_Then_HandlesCorrectlyAsync()
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -211,7 +204,10 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     [InlineData(1, 100)]
     [InlineData(2, 50)]
     [InlineData(3, 50)]
-    public async Task GetProductLookupValidPaginationEdgeCasesAsync(int page, int pageSize)
+    public async Task Given_ValidPaginationEdgeCases_When_GettingLookup_Then_ReturnsCorrectlyAsync(
+        int page,
+        int pageSize
+    )
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -224,7 +220,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
 
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/lookup?page={page}&pageSize={pageSize}");
+            api.Get.Url($"/api/references/products/lookup?pageNumber={page}&pageSize={pageSize}");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductLookupDto>>();
@@ -233,7 +229,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     }
 
     [Fact]
-    public async Task GetProductLookupWithNoMatchingFilterReturnsEmptyAsync()
+    public async Task Given_NoMatchingFilter_When_GettingLookup_Then_ReturnsEmptyAsync()
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -252,7 +248,7 @@ public class GetProductLookupEndpointTests(WebFixture webFixture) : IntegrationT
     }
 
     [Fact]
-    public async Task GetProductLookupWithVeryLongFilterStringAsync()
+    public async Task Given_VeryLongFilterString_When_GettingLookup_Then_ReturnsEmptyAsync()
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();

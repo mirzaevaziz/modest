@@ -9,7 +9,7 @@ namespace Modest.IntegrationTests.Endpoints.References.Products;
 public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTestBase(webFixture)
 {
     [Fact]
-    public async Task GetAllProductsReturnsAllAsync()
+    public async Task Given_ThreeProducts_When_GettingAll_Then_ReturnsAllAsync()
     {
         // Arrange: add 3 products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -35,7 +35,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsReturnsPagedAsync()
+    public async Task Given_FifteenProducts_When_GettingPageTwo_Then_ReturnsPagedAsync()
     {
         // Arrange: add 15 products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -57,7 +57,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithFilterReturnsFilteredAsync()
+    public async Task Given_FilterBySearchText_When_GettingAll_Then_ReturnsFilteredAsync()
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -78,7 +78,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithManufacturerFilterReturnsFilteredAsync()
+    public async Task Given_FilterByManufacturer_When_GettingAll_Then_ReturnsFilteredAsync()
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -100,7 +100,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithCountryFilterReturnsFilteredAsync()
+    public async Task Given_FilterByCountry_When_GettingAll_Then_ReturnsFilteredAsync()
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -122,7 +122,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithSortReturnsSortedAsync()
+    public async Task Given_SortByNameAscending_When_GettingAll_Then_ReturnsSortedAsync()
     {
         // Arrange
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -144,7 +144,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsReturnsEmptyIfNoneAsync()
+    public async Task Given_NoProducts_When_GettingAll_Then_ReturnsEmptyListAsync()
     {
         var resp = await AlbaHost.Scenario(api =>
         {
@@ -157,7 +157,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithShowDeletedFalseReturnsOnlyActiveAsync()
+    public async Task Given_ShowDeletedFalse_When_GettingAll_Then_ReturnsOnlyActiveAsync()
     {
         // Arrange: create 3 products and delete one
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -193,7 +193,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithShowDeletedTrueReturnsOnlyDeletedAsync()
+    public async Task Given_ShowDeletedTrue_When_GettingAll_Then_ReturnsOnlyDeletedAsync()
     {
         // Arrange: create 3 products and delete one
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -229,7 +229,7 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetAllProductsWithoutShowDeletedReturnsOnlyActiveByDefaultAsync()
+    public async Task Given_NoShowDeletedFilter_When_GettingAll_Then_ReturnsOnlyActiveByDefaultAsync()
     {
         // Arrange: create 3 products and delete one
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();

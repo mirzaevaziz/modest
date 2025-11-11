@@ -11,7 +11,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     : IntegrationTestBase(webFixture)
 {
     [Fact]
-    public async Task GetManufacturerLookupReturnsEmptyAsync()
+    public async Task Given_NoProducts_When_GettingManufacturerLookup_Then_ReturnsEmptyAsync()
     {
         // No products in DB
         var req = new PaginatedRequest<string>
@@ -22,7 +22,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
         };
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/manufacturers?page=1&pageSize=10");
+            api.Get.Url($"/api/references/products/manufacturers?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<PaginatedResponse<string>>();
@@ -32,7 +32,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     }
 
     [Fact]
-    public async Task GetManufacturerLookupReturnsPagedDistinctResultsAsync()
+    public async Task Given_FifteenProducts_When_GettingManufacturerLookup_Then_ReturnsPagedDistinctResultsAsync()
     {
         // Add 15 products, 5 unique manufacturers using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -46,7 +46,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
         // Page 1, size 3
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/manufacturers?page=1&pageSize=3");
+            api.Get.Url($"/api/references/products/manufacturers?pageNumber=1&pageSize=3");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
         var result = await resp.ReadAsJsonAsync<PaginatedResponse<string>>();
@@ -57,7 +57,7 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     }
 
     [Fact]
-    public async Task GetManufacturerLookupWithSearchReturnsFilteredAsync()
+    public async Task Given_SearchFilter_When_GettingManufacturerLookup_Then_ReturnsFilteredAsync()
     {
         // Add products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -86,15 +86,17 @@ public class GetManufacturerLookupEndpointTests(WebFixture webFixture)
     [InlineData(1, 0)]
     [InlineData(-1, 10)]
     [InlineData(1, -5)]
-    public async Task GetManufacturerLookupInvalidPagingReturnsEmptyAsync(int page, int pageSize)
+    public async Task Given_InvalidPaging_When_GettingManufacturerLookup_Then_ReturnsBadRequestAsync(
+        int page,
+        int pageSize
+    )
     {
         var resp = await AlbaHost.Scenario(api =>
         {
-            api.Get.Url($"/api/references/products/manufacturers?page={page}&pageSize={pageSize}");
-            api.StatusCodeShouldBe(HttpStatusCode.OK);
+            api.Get.Url(
+                $"/api/references/products/manufacturers?pageNumber={page}&pageSize={pageSize}"
+            );
+            api.StatusCodeShouldBe(HttpStatusCode.BadRequest);
         });
-        var result = await resp.ReadAsJsonAsync<PaginatedResponse<string>>();
-        result.Should().NotBeNull();
-        result!.Items.Should().BeEmpty();
     }
 }

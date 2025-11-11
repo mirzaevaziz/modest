@@ -22,7 +22,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [InlineData("TestProd", "TestMan", "")]
     [InlineData("TestProd", "TestMan", "1")]
     [InlineData("TestProd", "TestMan", "12")]
-    public async Task UpdateProductEdgeCasesAsync(
+    public async Task Given_InvalidFields_When_UpdatingProduct_Then_ReturnsBadRequestAsync(
         string? name,
         string? manufacturer,
         string? country
@@ -44,7 +44,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task UpdateProductReturnsOkAndUpdatesProductAsync()
+    public async Task Given_ValidUpdate_When_UpdatingProduct_Then_ReturnsOkAndUpdatesAsync()
     {
         // Arrange: create a valid product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -80,7 +80,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task UpdateProductNotFoundReturnsNotFoundAsync()
+    public async Task Given_NonExistentId_When_UpdatingProduct_Then_ReturnsNotFoundAsync()
     {
         var updateDto = new ProductUpdateDto(Guid.NewGuid(), "Name", "Man", "Land", 1);
         var resp = await AlbaHost.Scenario(api =>
@@ -91,7 +91,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task UpdateProductDuplicateReturnsBadRequestAsync()
+    public async Task Given_DuplicateName_When_UpdatingProduct_Then_ReturnsBadRequestAsync()
     {
         // Arrange: create two products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -117,7 +117,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task UpdateProductDeletedDuplicateReturnsOkRequestAsync()
+    public async Task Given_DeletedDuplicate_When_Updating_Then_ReturnsOkAndRenamesDeletedAsync()
     {
         // Arrange: create two products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -129,7 +129,10 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
             new ProductCreateDto("Name2", "Man2", "Land2", 1)
         );
         await productRepository.DeleteProductAsync(entity1.Id);
-        // Try to update entity2 to have the same fields as entity1
+
+        var beforeUpdate = DateTime.UtcNow;
+
+        // Act: Update entity2 to have the same FullName as deleted entity1
         var updateDto = new ProductUpdateDto(
             entity2.Id,
             entity1.Name,
@@ -142,17 +145,27 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
             api.Put.Json(updateDto).ToUrl($"/api/references/products");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var inDb = await productRepository.GetProductByIdAsync(entity1.Id);
-        inDb.Should().NotBeNull();
-        inDb!.Name.Should().StartWith(entity1.Name + " - Changed ");
-        inDb.Manufacturer.Should().Be(entity1.Manufacturer);
-        inDb.Country.Should().Be(entity1.Country);
 
-        inDb = await productRepository.GetProductByIdAsync(entity2.Id);
-        inDb.Should().NotBeNull();
-        inDb!.Name.Should().Be(entity1.Name);
-        inDb.Manufacturer.Should().Be(entity1.Manufacturer);
-        inDb.Country.Should().Be(entity1.Country);
+        // Assert: Deleted product (entity1) should be renamed with timestamp
+        var deletedProduct = await productRepository.GetProductByIdAsync(entity1.Id);
+        deletedProduct.Should().NotBeNull();
+        deletedProduct!.Name.Should().StartWith(entity1.Name + " - Changed ");
+        deletedProduct.Name.Should().NotBe(entity1.Name); // Name should be different due to timestamp
+        deletedProduct.Name.Length.Should().BeGreaterThan(entity1.Name.Length + 11); // " - Changed " + timestamp
+        deletedProduct.Manufacturer.Should().Be(entity1.Manufacturer);
+        deletedProduct.Country.Should().Be(entity1.Country);
+        deletedProduct.IsDeleted.Should().BeTrue(); // Should remain deleted
+        deletedProduct.DeletedAt.Should().NotBeNull();
+        deletedProduct.DeletedBy.Should().NotBeEmpty();
+
+        // Assert: Updated product (entity2) should have the new FullName
+        var updatedProduct = await productRepository.GetProductByIdAsync(entity2.Id);
+        updatedProduct.Should().NotBeNull();
+        updatedProduct!.Name.Should().Be(entity1.Name);
+        updatedProduct.Manufacturer.Should().Be(entity1.Manufacturer);
+        updatedProduct.Country.Should().Be(entity1.Country);
+        updatedProduct.IsDeleted.Should().BeFalse();
+        updatedProduct.DeletedAt.Should().BeNull();
     }
 
     [Theory]
@@ -162,7 +175,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [InlineData(10001)]
     [InlineData(10002)]
     [InlineData(20000)]
-    public async Task UpdateProductInvalidPieceCountInUnitReturnsBadRequestAsync(
+    public async Task Given_InvalidPieceCount_When_UpdatingProduct_Then_ReturnsBadRequestAsync(
         int pieceCountInUnit
     )
     {
@@ -191,7 +204,9 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     [InlineData(100)]
     [InlineData(5000)]
     [InlineData(10000)]
-    public async Task UpdateProductValidPieceCountInUnitReturnsOkAsync(int pieceCountInUnit)
+    public async Task Given_ValidPieceCount_When_UpdatingProduct_Then_ReturnsOkAsync(
+        int pieceCountInUnit
+    )
     {
         // Arrange: create a valid product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();

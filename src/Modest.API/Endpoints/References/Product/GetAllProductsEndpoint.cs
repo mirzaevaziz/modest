@@ -5,7 +5,7 @@ using Modest.Core.Features.References.Product;
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetAllProductsEndpoint(IProductService service)
-    : Endpoint<GetAllProductsEndpoint.GetAllProductsRequest, List<ProductDto>>
+    : Endpoint<GetAllProductsEndpoint.GetAllProductsRequest, PaginatedResponse<ProductDto>>
 {
     public override void Configure()
     {
@@ -29,7 +29,7 @@ public class GetAllProductsEndpoint(IProductService service)
             },
             req.SortFields
         );
-        await Send.OkAsync(result.Items.ToList(), ct);
+        await Send.OkAsync(result, ct);
     }
 
     public class GetAllProductsRequest

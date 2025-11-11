@@ -9,7 +9,7 @@ namespace Modest.IntegrationTests.Endpoints.References.Products;
 public class GetProductByIdEndpointTests(WebFixture webFixture) : IntegrationTestBase(webFixture)
 {
     [Fact]
-    public async Task GetProductByIdReturnsProductAsync()
+    public async Task Given_ValidId_When_GettingProductById_Then_ReturnsProductAsync()
     {
         // Arrange: create a product using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -31,7 +31,7 @@ public class GetProductByIdEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task GetProductByIdReturnsNotFoundAsync()
+    public async Task Given_InvalidId_When_GettingProductById_Then_ReturnsNotFoundAsync()
     {
         var resp = await AlbaHost.Scenario(api =>
         {
