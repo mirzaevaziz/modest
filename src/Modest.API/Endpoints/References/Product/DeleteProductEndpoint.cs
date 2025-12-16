@@ -1,25 +1,16 @@
-using FastEndpoints;
-using Modest.Core.Common.Models;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class DeleteProductEndpoint(IProductService service) : Endpoint<IdRequest, bool>
+public class DeleteProductEndpoint(IProductService service)
+    : BaseDeleteEndpoint<IProductService>(service)
 {
-    public override void Configure()
-    {
-        Delete("/references/products/{id:guid}");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Delete a product";
-            s.Description = "Deletes a product by its unique identifier.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string ResourceName => "product";
 
-    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
+    protected override Task<bool> DeleteAsync(IProductService service, Guid id)
     {
-        var result = await service.DeleteProductAsync(req.Id);
-        await Send.OkAsync(result, ct);
+        return service.DeleteProductAsync(id);
     }
 }

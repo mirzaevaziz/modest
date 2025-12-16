@@ -1,24 +1,16 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class UpdateProductEndpoint(IProductService service) : Endpoint<ProductUpdateDto, ProductDto>
+public class UpdateProductEndpoint(IProductService service)
+    : BaseUpdateEndpoint<IProductService, ProductUpdateDto, ProductDto>(service)
 {
-    public override void Configure()
-    {
-        Put("/references/products");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Update a product";
-            s.Description = "Updates an existing product with the provided details.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string ResourceName => "product";
 
-    public override async Task HandleAsync(ProductUpdateDto req, CancellationToken ct)
+    protected override Task<ProductDto> UpdateAsync(IProductService service, ProductUpdateDto dto)
     {
-        var product = await service.UpdateProductAsync(req);
-        await Send.OkAsync(product, ct);
+        return service.UpdateProductAsync(dto);
     }
 }

@@ -1,24 +1,16 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class CreateProductEndpoint(IProductService service) : Endpoint<ProductCreateDto, ProductDto>
+public class CreateProductEndpoint(IProductService service)
+    : BaseCreateEndpoint<IProductService, ProductCreateDto, ProductDto>(service)
 {
-    public override void Configure()
-    {
-        Post("/references/products");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Create a new product";
-            s.Description = "Creates a new product with the provided details.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string ResourceName => "product";
 
-    public override async Task HandleAsync(ProductCreateDto req, CancellationToken ct)
+    protected override Task<ProductDto> CreateAsync(IProductService service, ProductCreateDto dto)
     {
-        var product = await service.CreateProductAsync(req);
-        await Send.OkAsync(product, ct);
+        return service.CreateProductAsync(dto);
     }
 }

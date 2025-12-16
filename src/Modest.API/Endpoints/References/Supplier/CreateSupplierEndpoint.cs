@@ -1,25 +1,19 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
 public class CreateSupplierEndpoint(ISupplierService service)
-    : Endpoint<SupplierCreateDto, SupplierDto>
+    : BaseCreateEndpoint<ISupplierService, SupplierCreateDto, SupplierDto>(service)
 {
-    public override void Configure()
-    {
-        Post("/references/suppliers");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Create a new supplier";
-            s.Description = "Creates a new supplier with the provided details.";
-        });
-    }
+    protected override string ResourcePath => "/references/suppliers";
+    protected override string ResourceName => "supplier";
 
-    public override async Task HandleAsync(SupplierCreateDto req, CancellationToken ct)
+    protected override Task<SupplierDto> CreateAsync(
+        ISupplierService service,
+        SupplierCreateDto dto
+    )
     {
-        var supplier = await service.CreateSupplierAsync(req);
-        await Send.OkAsync(supplier, ct);
+        return service.CreateSupplierAsync(dto);
     }
 }

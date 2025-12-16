@@ -1,25 +1,16 @@
-using FastEndpoints;
-using Modest.Core.Common.Models;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
-public class DeleteSupplierEndpoint(ISupplierService service) : Endpoint<IdRequest, bool>
+public class DeleteSupplierEndpoint(ISupplierService service)
+    : BaseDeleteEndpoint<ISupplierService>(service)
 {
-    public override void Configure()
-    {
-        Delete("/references/suppliers/{id:guid}");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Delete a supplier";
-            s.Description = "Deletes a supplier by its unique identifier.";
-        });
-    }
+    protected override string ResourcePath => "/references/suppliers";
+    protected override string ResourceName => "supplier";
 
-    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
+    protected override Task<bool> DeleteAsync(ISupplierService service, Guid id)
     {
-        var result = await service.DeleteSupplierAsync(req.Id);
-        await Send.OkAsync(result, ct);
+        return service.DeleteSupplierAsync(id);
     }
 }

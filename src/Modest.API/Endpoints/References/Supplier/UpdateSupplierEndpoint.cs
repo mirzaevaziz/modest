@@ -1,25 +1,19 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
 public class UpdateSupplierEndpoint(ISupplierService service)
-    : Endpoint<SupplierUpdateDto, SupplierDto>
+    : BaseUpdateEndpoint<ISupplierService, SupplierUpdateDto, SupplierDto>(service)
 {
-    public override void Configure()
-    {
-        Put("/references/suppliers");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Update a supplier";
-            s.Description = "Updates an existing supplier with the provided details.";
-        });
-    }
+    protected override string ResourcePath => "/references/suppliers";
+    protected override string ResourceName => "supplier";
 
-    public override async Task HandleAsync(SupplierUpdateDto req, CancellationToken ct)
+    protected override Task<SupplierDto> UpdateAsync(
+        ISupplierService service,
+        SupplierUpdateDto dto
+    )
     {
-        var supplier = await service.UpdateSupplierAsync(req);
-        await Send.OkAsync(supplier, ct);
+        return service.UpdateSupplierAsync(dto);
     }
 }
