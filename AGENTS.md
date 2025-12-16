@@ -2,7 +2,7 @@
 
 ## Issue Tracking with Beads
 
-This project uses [Beads](https://github.com/modernice/beads) for issue tracking. When working on tasks:
+This project uses [Beads](https://github.com/mirzaevaziz/modest/) for issue tracking. When working on tasks:
 
 ### Creating Issues
 

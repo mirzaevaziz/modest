@@ -1,6 +1,7 @@
 using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 using Xunit;
 
@@ -28,10 +29,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             api.Get.Url($"/api/references/products?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(3);
-        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id, p3.Id]);
+        result!.Items.Count.Should().Be(3);
+        result.Items.Select(x => x.Id).Should().Contain([p1.Id, p2.Id, p3.Id]);
     }
 
     [Fact]
@@ -51,9 +52,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             api.Get.Url($"/api/references/products?pageNumber=2&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(5);
+        result!.Items.Count.Should().Be(5);
     }
 
     [Fact]
@@ -71,10 +72,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(1);
-        result[0].Name.Should().Be("Alpha");
+        result!.Items.Count.Should().Be(1);
+        result.Items[0].Name.Should().Be("Alpha");
     }
 
     [Fact]
@@ -93,10 +94,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(2);
-        result.All(x => x.Manufacturer == "AAAA").Should().BeTrue();
+        result!.Items.Count.Should().Be(2);
+        result.Items.All(x => x.Manufacturer == "AAAA").Should().BeTrue();
     }
 
     [Fact]
@@ -115,10 +116,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(2);
-        result.All(x => x.Country == "XXXX").Should().BeTrue();
+        result!.Items.Count.Should().Be(2);
+        result.Items.All(x => x.Country == "XXXX").Should().BeTrue();
     }
 
     [Fact]
@@ -137,10 +138,10 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Count.Should().Be(3);
-        result.Select(x => x.Name).Should().ContainInOrder("AAAA", "BBBB", "CCCC");
+        result!.Items.Count.Should().Be(3);
+        result.Items.Select(x => x.Name).Should().ContainInOrder("AAAA", "BBBB", "CCCC");
     }
 
     [Fact]
@@ -151,9 +152,9 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             api.Get.Url($"/api/references/products?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
         result.Should().NotBeNull();
-        result!.Should().BeEmpty();
+        result!.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -183,13 +184,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
 
         // Assert: should return only active products
         result.Should().NotBeNull();
-        result!.Count.Should().Be(2);
-        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
-        result.Select(x => x.Id).Should().NotContain(p3.Id);
+        result!.Items.Count.Should().Be(2);
+        result.Items.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
+        result.Items.Select(x => x.Id).Should().NotContain(p3.Id);
     }
 
     [Fact]
@@ -219,13 +220,13 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             );
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
 
         // Assert: should return only deleted products
         result.Should().NotBeNull();
-        result!.Count.Should().Be(1);
-        result[0].Id.Should().Be(p3.Id);
-        result.Select(x => x.Id).Should().NotContain([p1.Id, p2.Id]);
+        result!.Items.Count.Should().Be(1);
+        result.Items[0].Id.Should().Be(p3.Id);
+        result.Items.Select(x => x.Id).Should().NotContain([p1.Id, p2.Id]);
     }
 
     [Fact]
@@ -253,12 +254,12 @@ public class GetAllProductsEndpointTests(WebFixture webFixture) : IntegrationTes
             api.Get.Url($"/api/references/products?pageNumber=1&pageSize=10");
             api.StatusCodeShouldBe(HttpStatusCode.OK);
         });
-        var result = await resp.ReadAsJsonAsync<List<ProductDto>>();
+        var result = await resp.ReadAsJsonAsync<PaginatedResponse<ProductDto>>();
 
         // Assert: should return only active products by default
         result.Should().NotBeNull();
-        result!.Count.Should().Be(2);
-        result.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
-        result.Select(x => x.Id).Should().NotContain(p3.Id);
+        result!.Items.Count.Should().Be(2);
+        result.Items.Select(x => x.Id).Should().Contain([p1.Id, p2.Id]);
+        result.Items.Select(x => x.Id).Should().NotContain(p3.Id);
     }
 }

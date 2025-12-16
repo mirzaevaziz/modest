@@ -1,10 +1,9 @@
 using FluentValidation;
-using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
+using Modest.Core.Helpers;
 using Modest.Data.Common;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Modest.Data.Features.References.Product;
@@ -123,13 +122,12 @@ public class ProductRepository : IProductRepository
             .Limit(request.PageSize)
             .ToListAsync();
         var dtos = items.Select(x => x.ToProductDto()).ToList();
-        return new PaginatedResponse<ProductDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(
+            dtos,
+            (int)total,
+            request.PageNumber,
+            request.PageSize
+        );
     }
 
     public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
@@ -155,13 +153,12 @@ public class ProductRepository : IProductRepository
         var dtos = items
             .Select(x => new ProductLookupDto(x.Id, x.FullName, x.PieceCountInUnit))
             .ToList();
-        return new PaginatedResponse<ProductLookupDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(
+            dtos,
+            (int)total,
+            request.PageNumber,
+            request.PageSize
+        );
     }
 
     public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
@@ -183,13 +180,7 @@ public class ProductRepository : IProductRepository
         var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToList();
-        return new PaginatedResponse<string>
-        {
-            Items = paged,
-            TotalCount = total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(paged, total, request.PageNumber, request.PageSize);
     }
 
     public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
@@ -211,13 +202,7 @@ public class ProductRepository : IProductRepository
         var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToList();
-        return new PaginatedResponse<string>
-        {
-            Items = paged,
-            TotalCount = total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(paged, total, request.PageNumber, request.PageSize);
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)

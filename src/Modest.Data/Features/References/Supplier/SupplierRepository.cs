@@ -1,10 +1,9 @@
 using FluentValidation;
-using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Supplier;
+using Modest.Core.Helpers;
 using Modest.Data.Common;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Modest.Data.Features.References.Supplier;
@@ -112,13 +111,12 @@ public class SupplierRepository : ISupplierRepository
             .Limit(request.PageSize)
             .ToListAsync();
         var dtos = items.Select(x => x.ToDto()).ToList();
-        return new PaginatedResponse<SupplierDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(
+            dtos,
+            (int)total,
+            request.PageNumber,
+            request.PageSize
+        );
     }
 
     public async Task<PaginatedResponse<SupplierLookupDto>> GetSupplierLookupDtosAsync(
@@ -142,13 +140,12 @@ public class SupplierRepository : ISupplierRepository
             .Limit(request.PageSize)
             .ToListAsync();
         var dtos = items.Select(x => new SupplierLookupDto(x.Id, x.Name, x.Code)).ToList();
-        return new PaginatedResponse<SupplierLookupDto>
-        {
-            Items = dtos,
-            TotalCount = (int)total,
-            PageSize = request.PageSize,
-            PageNumber = request.PageNumber,
-        };
+        return PaginationHelper.BuildResponse(
+            dtos,
+            (int)total,
+            request.PageNumber,
+            request.PageSize
+        );
     }
 
     public async Task<SupplierDto?> GetSupplierByIdAsync(Guid id)
