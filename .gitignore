@@ -353,3 +353,14 @@ MigrationBackup/
 
 *.received.txt
 *.received.*
+
+# Beads - local-only files
+.beads/beads.db
+.beads/beads.db-*
+.beads/bd.sock
+.beads/bd.pipe
+.beads/.exclusive-lock
+.beads/daemon.lock
+.beads/daemon.log
+.beads/daemon.pid
+.git/beads-worktrees/
