@@ -1,31 +1,16 @@
-using FastEndpoints;
-using Modest.Core.Common.Models;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class GetProductByIdEndpoint(IProductService service) : Endpoint<IdRequest, ProductDto>
+public class GetProductByIdEndpoint(IProductService service)
+    : BaseGetByIdEndpoint<IProductService, ProductDto>(service)
 {
-    public override void Configure()
-    {
-        Get("/references/products/{id:guid}");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Get product by id";
-            s.Description = "Returns a product by its unique identifier.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string ResourceName => "product";
 
-    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
+    protected override Task<ProductDto?> GetByIdAsync(IProductService service, Guid id)
     {
-        var product = await service.GetProductByIdAsync(req.Id);
-        if (product is null)
-        {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
-
-        await Send.OkAsync(product, ct);
+        return service.GetProductByIdAsync(id);
     }
 }
