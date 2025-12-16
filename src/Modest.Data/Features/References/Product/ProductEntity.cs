@@ -1,6 +1,8 @@
+using Modest.Data.Common;
+
 namespace Modest.Data.Features.References.Product;
 
-public class ProductEntity : AuditableEntity
+public class ProductEntity : AuditableEntity, ICodeEntity
 {
     public string FullName
     {

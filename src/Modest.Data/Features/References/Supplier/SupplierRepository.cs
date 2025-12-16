@@ -1,4 +1,3 @@
-using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Supplier;
@@ -8,52 +7,28 @@ using MongoDB.Driver;
 
 namespace Modest.Data.Features.References.Supplier;
 
-public class SupplierRepository : ISupplierRepository
+public class SupplierRepository
+    : BaseRepository<
+        SupplierEntity,
+        SupplierDto,
+        SupplierCreateDto,
+        SupplierUpdateDto,
+        SupplierFilter
+    >,
+        ISupplierRepository
 {
     private const string CollectionName = "supplier";
 
-    private readonly IMongoCollection<SupplierEntity> _collection;
-    private readonly ICurrentUserProvider _currentUserProvider;
-
     public SupplierRepository(IMongoDatabase database, ICurrentUserProvider currentUserProvider)
+        : base(database, CollectionName, currentUserProvider) { }
+
+    protected override void EnsureIndexes()
     {
-        _collection = database.GetCollection<SupplierEntity>(CollectionName);
-        _currentUserProvider = currentUserProvider;
+        // Create unique index for Code
+        CreateUniqueIndex("code", x => x.Code);
 
-        // Ensure index for Code (unique)
-        var codeIndexKeys = Builders<SupplierEntity>.IndexKeys.Ascending(x => x.Code);
-        var codeIndexModel = new CreateIndexModel<SupplierEntity>(
-            codeIndexKeys,
-            new CreateIndexOptions
-            {
-                Unique = true,
-                Name = "idx_code",
-                Background = true,
-            }
-        );
-
-        // Ensure index for Name
-        var nameIndexKeys = Builders<SupplierEntity>.IndexKeys.Ascending(x => x.Name);
-        var nameIndexModel = new CreateIndexModel<SupplierEntity>(
-            nameIndexKeys,
-            new CreateIndexOptions
-            {
-                Unique = true,
-                Name = "idx_name",
-                Background = true,
-            }
-        );
-
-        try
-        {
-            _collection.Indexes.CreateOne(codeIndexModel);
-            _collection.Indexes.CreateOne(nameIndexModel);
-        }
-        catch (MongoCommandException ex)
-            when (ex.CodeName is "IndexOptionsConflict" or "IndexKeySpecsConflict")
-        {
-            // Index already exists, ignore
-        }
+        // Create unique index for Name
+        CreateUniqueIndex("name", x => x.Name);
     }
 
     public async Task<PaginatedResponse<SupplierDto>> GetAllSuppliersAsync(
@@ -66,33 +41,15 @@ public class SupplierRepository : ISupplierRepository
 
         if (request.Filter != null)
         {
-            // Handle ShowDeleted filter
-            if (request.Filter.ShowDeleted.HasValue)
-            {
-                filter &= filterBuilder.Eq(x => x.IsDeleted, request.Filter.ShowDeleted.Value);
-            }
-            else
-            {
-                // Default: only show non-deleted items
-                filter &= filterBuilder.Eq(x => x.IsDeleted, false);
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter.SearchText))
-            {
-                filter &= MongoFilterHelper.BuildWordSearchFilter<SupplierEntity>(
-                    request.Filter.SearchText,
-                    x => x.Name
-                );
-            }
+            filter = ApplyShowDeletedFilter(filter, request.Filter.ShowDeleted);
+            filter = ApplySearchTextFilter(filter, request.Filter.SearchText, x => x.Name);
         }
         else
         {
-            // Default: only show non-deleted items when no filter is provided
             filter = filterBuilder.Eq(x => x.IsDeleted, false);
         }
 
-        var query = _collection.Find(filter);
-        // Sorting
+        var query = Collection.Find(filter);
         if (sortFields != null)
         {
             var sortDef = Builders<SupplierEntity>.Sort.Combine(
@@ -119,39 +76,20 @@ public class SupplierRepository : ISupplierRepository
         );
     }
 
-    public async Task<PaginatedResponse<SupplierLookupDto>> GetSupplierLookupDtosAsync(
+    public Task<PaginatedResponse<SupplierLookupDto>> GetSupplierLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
-        var filterBuilder = Builders<SupplierEntity>.Filter;
-        var filter = filterBuilder.Eq(x => x.IsDeleted, false);
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            filter &= MongoFilterHelper.BuildWordSearchFilter<SupplierEntity>(
-                request.Filter,
-                x => x.Name
-            );
-        }
-
-        var query = _collection.Find(filter);
-        var total = await query.CountDocumentsAsync();
-        var items = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
-        var dtos = items.Select(x => new SupplierLookupDto(x.Id, x.Name, x.Code)).ToList();
-        return PaginationHelper.BuildResponse(
-            dtos,
-            (int)total,
-            request.PageNumber,
-            request.PageSize
+        return GetLookupAsync(
+            request,
+            x => x.Name,
+            entity => new SupplierLookupDto(entity.Id, entity.Name, entity.Code)
         );
     }
 
-    public async Task<SupplierDto?> GetSupplierByIdAsync(Guid id)
+    public Task<SupplierDto?> GetSupplierByIdAsync(Guid id)
     {
-        var entity = await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
-        return entity?.ToDto();
+        return GetByIdAsync(id, entity => entity.ToDto());
     }
 
     public async Task<SupplierDto> CreateSupplierAsync(
@@ -159,11 +97,11 @@ public class SupplierRepository : ISupplierRepository
         string code
     )
     {
-        using var session = await _collection.Database.Client.StartSessionAsync();
+        using var session = await Collection.Database.Client.StartSessionAsync();
         session.StartTransaction();
         try
         {
-            var currentUser = _currentUserProvider.GetCurrentUsername();
+            var currentUser = CurrentUserProvider.GetCurrentUsername();
             var entity = new SupplierEntity
             {
                 Code = code,
@@ -179,19 +117,16 @@ public class SupplierRepository : ISupplierRepository
                 IsDeleted = false,
             };
 
-            // Check for duplicate Name
-            var duplicate = await _collection
-                .Find(x => x.Name == entity.Name)
-                .FirstOrDefaultAsync();
+            var duplicate = await Collection.Find(x => x.Name == entity.Name).FirstOrDefaultAsync();
             if (duplicate != null)
             {
                 if (!duplicate.IsDeleted)
                 {
-                    throw new ValidationException(
-                        $"Supplier with Name '{entity.Name}' already exists."
+                    throw new FluentValidation.ValidationException(
+                        "Supplier with the same name already exists."
                     );
                 }
-                // Restore
+                // Restore deleted duplicate
                 duplicate.IsDeleted = false;
                 duplicate.DeletedAt = null;
                 duplicate.DeletedBy = null;
@@ -202,12 +137,12 @@ public class SupplierRepository : ISupplierRepository
                 duplicate.Address = supplierCreateDto.Address;
                 duplicate.UpdatedAt = DateTimeOffset.UtcNow;
                 duplicate.UpdatedBy = currentUser;
-                await _collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
+                await Collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
                 await session.CommitTransactionAsync();
                 return duplicate.ToDto();
             }
 
-            await _collection.InsertOneAsync(session, entity);
+            await Collection.InsertOneAsync(session, entity);
             await session.CommitTransactionAsync();
             return entity.ToDto();
         }
@@ -220,12 +155,11 @@ public class SupplierRepository : ISupplierRepository
 
     public async Task<SupplierDto> UpdateSupplierAsync(SupplierUpdateDto supplierUpdateDto)
     {
-        var currentUser = _currentUserProvider.GetCurrentUsername();
+        var currentUser = CurrentUserProvider.GetCurrentUsername();
         var entity =
-            await _collection
+            await Collection
                 .Find(x => x.Id == supplierUpdateDto.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync() ?? throw new SupplierNotFoundException(supplierUpdateDto.Id);
-
         entity.Name = supplierUpdateDto.Name;
         entity.ContactPerson = supplierUpdateDto.ContactPerson;
         entity.Phone = supplierUpdateDto.Phone;
@@ -233,28 +167,30 @@ public class SupplierRepository : ISupplierRepository
         entity.Address = supplierUpdateDto.Address;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedBy = currentUser;
-        var duplicate = await _collection
+        var duplicate = await Collection
             .Find(x => x.Name == entity.Name && x.Id != entity.Id)
             .FirstOrDefaultAsync();
         if (duplicate is not null)
         {
             if (!duplicate.IsDeleted)
             {
-                throw new ValidationException($"Supplier with the same Name already exists.");
+                throw new FluentValidation.ValidationException(
+                    "Supplier with the same name already exists."
+                );
             }
-            // Change the name of the deleted duplicate to avoid conflict
+            // Rename deleted duplicate to avoid conflict
             duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
-            await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
+            await Collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
         }
 
-        await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return entity.ToDto();
     }
 
     public async Task<bool> DeleteSupplierAsync(Guid id)
     {
-        var currentUser = _currentUserProvider.GetCurrentUsername();
-        var entity = await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+        var currentUser = CurrentUserProvider.GetCurrentUsername();
+        var entity = await Collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
         if (entity == null)
         {
             return false;
@@ -263,7 +199,7 @@ public class SupplierRepository : ISupplierRepository
         entity.IsDeleted = true;
         entity.DeletedAt = DateTimeOffset.UtcNow;
         entity.DeletedBy = currentUser;
-        var result = await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        var result = await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;
     }
 }

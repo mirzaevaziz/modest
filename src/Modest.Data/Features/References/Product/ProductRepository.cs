@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
@@ -9,53 +8,22 @@ using MongoDB.Driver;
 
 namespace Modest.Data.Features.References.Product;
 
-public class ProductRepository : IProductRepository
+public class ProductRepository
+    : BaseRepository<ProductEntity, ProductDto, ProductCreateDto, ProductUpdateDto, ProductFilter>,
+        IProductRepository
 {
     private const string CollectionName = "product";
 
-    private readonly IMongoCollection<ProductEntity> _collection;
-    private readonly ICurrentUserProvider _currentUserProvider;
-
     public ProductRepository(IMongoDatabase database, ICurrentUserProvider currentUserProvider)
+        : base(database, CollectionName, currentUserProvider) { }
+
+    protected override void EnsureIndexes()
     {
-        _collection = database.GetCollection<ProductEntity>(CollectionName);
-        _currentUserProvider = currentUserProvider;
+        // Create unique index for Code
+        CreateUniqueIndex("code", x => x.Code);
 
-        // Ensure index for Code (unique)
-        var codeIndexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.Code);
-        var codeIndexModel = new CreateIndexModel<ProductEntity>(
-            codeIndexKeys,
-            new CreateIndexOptions
-            {
-                Unique = true,
-                Name = "idx_code",
-                Background = true, // Non-blocking index creation
-            }
-        );
-
-        // Ensure index for FullName (compound index on Name, Manufacturer, Country)
-        // Note: CreateOne with background:true is idempotent and won't recreate if exists
-        var fullNameIndexKeys = Builders<ProductEntity>.IndexKeys.Ascending(x => x.FullName);
-        var fullNameIndexModel = new CreateIndexModel<ProductEntity>(
-            fullNameIndexKeys,
-            new CreateIndexOptions
-            {
-                Unique = true,
-                Name = "idx_fullname",
-                Background = true, // Non-blocking index creation
-            }
-        );
-
-        try
-        {
-            _collection.Indexes.CreateOne(codeIndexModel);
-            _collection.Indexes.CreateOne(fullNameIndexModel);
-        }
-        catch (MongoCommandException ex)
-            when (ex.CodeName is "IndexOptionsConflict" or "IndexKeySpecsConflict")
-        {
-            // Index already exists with different options or same name, ignore
-        }
+        // Create unique index for FullName
+        CreateUniqueIndex("fullname", x => x.FullName);
     }
 
     public async Task<PaginatedResponse<ProductDto>> GetAllProductsAsync(
@@ -68,24 +36,8 @@ public class ProductRepository : IProductRepository
 
         if (request.Filter != null)
         {
-            // Handle ShowDeleted filter
-            if (request.Filter.ShowDeleted.HasValue)
-            {
-                filter &= filterBuilder.Eq(x => x.IsDeleted, request.Filter.ShowDeleted.Value);
-            }
-            else
-            {
-                // Default: only show non-deleted items
-                filter &= filterBuilder.Eq(x => x.IsDeleted, false);
-            }
-
-            if (!string.IsNullOrEmpty(request.Filter.SearchText))
-            {
-                filter &= MongoFilterHelper.BuildWordSearchFilter<ProductEntity>(
-                    request.Filter.SearchText,
-                    x => x.FullName
-                );
-            }
+            filter = ApplyShowDeletedFilter(filter, request.Filter.ShowDeleted);
+            filter = ApplySearchTextFilter(filter, request.Filter.SearchText, x => x.FullName);
 
             if (!string.IsNullOrEmpty(request.Filter.Manufacturer))
             {
@@ -99,12 +51,10 @@ public class ProductRepository : IProductRepository
         }
         else
         {
-            // Default: only show non-deleted items when no filter is provided
             filter = filterBuilder.Eq(x => x.IsDeleted, false);
         }
 
-        var query = _collection.Find(filter);
-        // Sorting
+        var query = Collection.Find(filter);
         if (sortFields != null)
         {
             var sortDef = Builders<ProductEntity>.Sort.Combine(
@@ -131,89 +81,43 @@ public class ProductRepository : IProductRepository
         );
     }
 
-    public async Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
+    public Task<PaginatedResponse<ProductLookupDto>> GetProductLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
-        var filterBuilder = Builders<ProductEntity>.Filter;
-        var filter = filterBuilder.Eq(x => x.IsDeleted, false);
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            filter &= MongoFilterHelper.BuildWordSearchFilter<ProductEntity>(
-                request.Filter,
-                x => x.FullName
-            );
-        }
-
-        var query = _collection.Find(filter);
-        var total = await query.CountDocumentsAsync();
-        var items = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Limit(request.PageSize)
-            .ToListAsync();
-        var dtos = items
-            .Select(x => new ProductLookupDto(x.Id, x.FullName, x.PieceCountInUnit))
-            .ToList();
-        return PaginationHelper.BuildResponse(
-            dtos,
-            (int)total,
-            request.PageNumber,
-            request.PageSize
+        return GetLookupAsync(
+            request,
+            x => x.FullName,
+            entity => new ProductLookupDto(entity.Id, entity.FullName, entity.PieceCountInUnit)
         );
     }
 
-    private async Task<PaginatedResponse<string>> GetDistinctFieldLookupAsync(
-        Expression<Func<ProductEntity, string>> fieldSelector,
+    public Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
-        var distinctValues = await _collection.DistinctAsync(
-            fieldSelector,
-            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
-        );
-        var list = await distinctValues.ToListAsync();
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            list = list.Where(value =>
-                    value.Contains(request.Filter, StringComparison.OrdinalIgnoreCase)
-                )
-                .ToList();
-        }
-
-        var total = list.Count;
-        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
-        return PaginationHelper.BuildResponse(paged, total, request.PageNumber, request.PageSize);
+        return GetDistinctFieldLookupAsync(x => x.Manufacturer, request);
     }
 
-    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+    public Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
-        return await GetDistinctFieldLookupAsync(x => x.Manufacturer, request);
+        return GetDistinctFieldLookupAsync(x => x.Country, request);
     }
 
-    public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
-        PaginatedRequest<string> request
-    )
+    public Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
-        return await GetDistinctFieldLookupAsync(x => x.Country, request);
-    }
-
-    public async Task<ProductDto?> GetProductByIdAsync(Guid id)
-    {
-        var entity = await _collection.Find(x => x.Id == id).FirstOrDefaultAsync();
-        return entity?.ToProductDto();
+        return GetByIdAsync(id, entity => entity.ToProductDto());
     }
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto, string code)
     {
-        using var session = await _collection.Database.Client.StartSessionAsync();
+        using var session = await Collection.Database.Client.StartSessionAsync();
         session.StartTransaction();
         try
         {
-            var currentUser = _currentUserProvider.GetCurrentUsername();
+            var currentUser = CurrentUserProvider.GetCurrentUsername();
             var entity = new ProductEntity
             {
                 Code = code,
@@ -221,25 +125,25 @@ public class ProductRepository : IProductRepository
                 Manufacturer = productCreateDto.Manufacturer,
                 Country = productCreateDto.Country,
                 PieceCountInUnit = productCreateDto.PieceCountInUnit,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = currentUser,
                 UpdatedBy = currentUser,
                 IsDeleted = false,
             };
 
-            var duplicate = await _collection
+            var duplicate = await Collection
                 .Find(x => x.FullName == entity.FullName)
                 .FirstOrDefaultAsync();
             if (duplicate != null)
             {
                 if (!duplicate.IsDeleted)
                 {
-                    throw new ValidationException(
-                        $"Product with the same FullName already exists."
+                    throw new FluentValidation.ValidationException(
+                        "Product with the same FullName already exists."
                     );
                 }
-                // Undo delete (restore)
+                // Restore deleted duplicate
                 duplicate.IsDeleted = false;
                 duplicate.DeletedAt = null;
                 duplicate.DeletedBy = null;
@@ -247,14 +151,14 @@ public class ProductRepository : IProductRepository
                 duplicate.Manufacturer = productCreateDto.Manufacturer;
                 duplicate.Country = productCreateDto.Country;
                 duplicate.PieceCountInUnit = productCreateDto.PieceCountInUnit;
-                duplicate.UpdatedAt = DateTime.UtcNow;
+                duplicate.UpdatedAt = DateTimeOffset.UtcNow;
                 duplicate.UpdatedBy = currentUser;
-                await _collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
+                await Collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
                 await session.CommitTransactionAsync();
                 return duplicate.ToProductDto();
             }
 
-            await _collection.InsertOneAsync(session, entity);
+            await Collection.InsertOneAsync(session, entity);
             await session.CommitTransactionAsync();
             return entity.ToProductDto();
         }
@@ -267,48 +171,50 @@ public class ProductRepository : IProductRepository
 
     public async Task<ProductDto> UpdateProductAsync(ProductUpdateDto productUpdateDto)
     {
-        var currentUser = _currentUserProvider.GetCurrentUsername();
+        var currentUser = CurrentUserProvider.GetCurrentUsername();
         var entity =
-            await _collection
+            await Collection
                 .Find(x => x.Id == productUpdateDto.Id && !x.IsDeleted)
                 .FirstOrDefaultAsync() ?? throw new ProductNotFoundException(productUpdateDto.Id);
         entity.Name = productUpdateDto.Name;
         entity.Manufacturer = productUpdateDto.Manufacturer;
         entity.Country = productUpdateDto.Country;
         entity.PieceCountInUnit = productUpdateDto.PieceCountInUnit;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedBy = currentUser;
-        var duplicate = await _collection
+        var duplicate = await Collection
             .Find(x => x.FullName == entity.FullName && x.Id != entity.Id)
             .FirstOrDefaultAsync();
         if (duplicate is not null)
         {
             if (!duplicate.IsDeleted)
             {
-                throw new ValidationException($"Product with the same FullName already exists.");
+                throw new FluentValidation.ValidationException(
+                    "Product with the same FullName already exists."
+                );
             }
-            // Change the name of the deleted duplicate to avoid conflict
+            // Rename deleted duplicate to avoid conflict
             duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
-            await _collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
+            await Collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
         }
 
-        await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return entity.ToProductDto();
     }
 
     public async Task<bool> DeleteProductAsync(Guid id)
     {
-        var currentUser = _currentUserProvider.GetCurrentUsername();
-        var entity = await _collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
+        var currentUser = CurrentUserProvider.GetCurrentUsername();
+        var entity = await Collection.Find(x => x.Id == id && !x.IsDeleted).FirstOrDefaultAsync();
         if (entity == null)
         {
             return false;
         }
 
         entity.IsDeleted = true;
-        entity.DeletedAt = DateTime.UtcNow;
+        entity.DeletedAt = DateTimeOffset.UtcNow;
         entity.DeletedBy = currentUser;
-        var result = await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        var result = await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;
     }
 }
