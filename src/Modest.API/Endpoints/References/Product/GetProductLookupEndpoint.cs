@@ -1,27 +1,20 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetProductLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResponse<ProductLookupDto>>
+    : BaseLookupEndpoint<IProductService, ProductLookupDto>(service)
 {
-    public override void Configure()
-    {
-        Get("/references/products/lookup");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Get product lookup paginated";
-            s.Description =
-                "Returns a paginated lookup list of products for dropdowns or quick search.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string ResourceName => "product";
 
-    public override async Task HandleAsync(PaginatedRequest<string> req, CancellationToken ct)
+    protected override Task<PaginatedResponse<ProductLookupDto>> GetLookupAsync(
+        IProductService service,
+        PaginatedRequest<string> request
+    )
     {
-        var result = await service.GetProductLookupDtosAsync(req);
-        await Send.OkAsync(result, ct);
+        return service.GetProductLookupDtosAsync(request);
     }
 }

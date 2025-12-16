@@ -1,27 +1,20 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetCountryLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResponse<string>>
+    : BaseDistinctFieldLookupEndpoint<IProductService>(service)
 {
-    public override void Configure()
-    {
-        Get("/references/products/countries");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Get paginated, distinct country names for products.";
-            s.Description =
-                "Returns a paginated list of unique country names from products, optionally filtered by a search string.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string FieldName => "countries";
 
-    public override async Task HandleAsync(PaginatedRequest<string> req, CancellationToken ct)
+    protected override Task<PaginatedResponse<string>> GetDistinctFieldLookupAsync(
+        IProductService service,
+        PaginatedRequest<string> request
+    )
     {
-        var result = await service.GetCountryLookupDtosAsync(req);
-        await Send.OkAsync(result, ct);
+        return service.GetCountryLookupDtosAsync(request);
     }
 }

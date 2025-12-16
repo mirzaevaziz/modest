@@ -1,27 +1,20 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
 public class GetSupplierLookupEndpoint(ISupplierService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResponse<SupplierLookupDto>>
+    : BaseLookupEndpoint<ISupplierService, SupplierLookupDto>(service)
 {
-    public override void Configure()
-    {
-        Get("/references/suppliers/lookup");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Get supplier lookup paginated";
-            s.Description =
-                "Returns a paginated lookup list of suppliers for dropdowns or quick search.";
-        });
-    }
+    protected override string ResourcePath => "/references/suppliers";
+    protected override string ResourceName => "supplier";
 
-    public override async Task HandleAsync(PaginatedRequest<string> req, CancellationToken ct)
+    protected override Task<PaginatedResponse<SupplierLookupDto>> GetLookupAsync(
+        ISupplierService service,
+        PaginatedRequest<string> request
+    )
     {
-        var result = await service.GetSupplierLookupDtosAsync(req);
-        await Send.OkAsync(result, ct);
+        return service.GetSupplierLookupDtosAsync(request);
     }
 }

@@ -1,27 +1,20 @@
-using FastEndpoints;
+using Modest.API.Endpoints.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
 public class GetManufacturerLookupEndpoint(IProductService service)
-    : Endpoint<PaginatedRequest<string>, PaginatedResponse<string>>
+    : BaseDistinctFieldLookupEndpoint<IProductService>(service)
 {
-    public override void Configure()
-    {
-        Get("/references/products/manufacturers");
-        AllowAnonymous();
-        Summary(s =>
-        {
-            s.Summary = "Get manufacturer lookup paginated";
-            s.Description =
-                "Returns a paginated, distinct list of manufacturer names for products.";
-        });
-    }
+    protected override string ResourcePath => "/references/products";
+    protected override string FieldName => "manufacturers";
 
-    public override async Task HandleAsync(PaginatedRequest<string> req, CancellationToken ct)
+    protected override Task<PaginatedResponse<string>> GetDistinctFieldLookupAsync(
+        IProductService service,
+        PaginatedRequest<string> request
+    )
     {
-        var result = await service.GetManufacturerLookupDtosAsync(req);
-        await Send.OkAsync(result, ct);
+        return service.GetManufacturerLookupDtosAsync(request);
     }
 }
