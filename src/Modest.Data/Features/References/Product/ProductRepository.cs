@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
@@ -161,18 +162,21 @@ public class ProductRepository : IProductRepository
         );
     }
 
-    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+    private async Task<PaginatedResponse<string>> GetDistinctFieldLookupAsync(
+        Expression<Func<ProductEntity, string>> fieldSelector,
         PaginatedRequest<string> request
     )
     {
-        var manufacturers = await _collection.DistinctAsync<string>(
-            "Manufacturer",
+        var distinctValues = await _collection.DistinctAsync(
+            fieldSelector,
             Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
         );
-        var list = await manufacturers.ToListAsync();
+        var list = await distinctValues.ToListAsync();
         if (!string.IsNullOrEmpty(request.Filter))
         {
-            list = list.Where(m => m.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
+            list = list.Where(value =>
+                    value.Contains(request.Filter, StringComparison.OrdinalIgnoreCase)
+                )
                 .ToList();
         }
 
@@ -183,26 +187,18 @@ public class ProductRepository : IProductRepository
         return PaginationHelper.BuildResponse(paged, total, request.PageNumber, request.PageSize);
     }
 
+    public async Task<PaginatedResponse<string>> GetManufacturerLookupDtosAsync(
+        PaginatedRequest<string> request
+    )
+    {
+        return await GetDistinctFieldLookupAsync(x => x.Manufacturer, request);
+    }
+
     public async Task<PaginatedResponse<string>> GetCountryLookupDtosAsync(
         PaginatedRequest<string> request
     )
     {
-        var countries = await _collection.DistinctAsync<string>(
-            "Country",
-            Builders<ProductEntity>.Filter.Eq(x => x.IsDeleted, false)
-        );
-        var list = await countries.ToListAsync();
-        if (!string.IsNullOrEmpty(request.Filter))
-        {
-            list = list.Where(c => c.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        var total = list.Count;
-        var paged = list.Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
-        return PaginationHelper.BuildResponse(paged, total, request.PageNumber, request.PageSize);
+        return await GetDistinctFieldLookupAsync(x => x.Country, request);
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
