@@ -1,10 +1,10 @@
 using FastEndpoints;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
-public class GetSupplierByIdEndpoint(ISupplierService service)
-    : Endpoint<GetSupplierByIdEndpoint.GetSupplierByIdRequest, SupplierDto>
+public class GetSupplierByIdEndpoint(ISupplierService service) : Endpoint<IdRequest, SupplierDto>
 {
     public override void Configure()
     {
@@ -17,7 +17,7 @@ public class GetSupplierByIdEndpoint(ISupplierService service)
         });
     }
 
-    public override async Task HandleAsync(GetSupplierByIdRequest req, CancellationToken ct)
+    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
     {
         var supplier = await service.GetSupplierByIdAsync(req.Id);
         if (supplier is null)
@@ -27,10 +27,5 @@ public class GetSupplierByIdEndpoint(ISupplierService service)
         }
 
         await Send.OkAsync(supplier, ct);
-    }
-
-    public class GetSupplierByIdRequest
-    {
-        public Guid Id { get; set; }
     }
 }

@@ -1,10 +1,10 @@
 using FastEndpoints;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class DeleteProductEndpoint(IProductService service)
-    : Endpoint<DeleteProductEndpoint.DeleteProductRequest, bool>
+public class DeleteProductEndpoint(IProductService service) : Endpoint<IdRequest, bool>
 {
     public override void Configure()
     {
@@ -17,14 +17,9 @@ public class DeleteProductEndpoint(IProductService service)
         });
     }
 
-    public override async Task HandleAsync(DeleteProductRequest req, CancellationToken ct)
+    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
     {
         var result = await service.DeleteProductAsync(req.Id);
         await Send.OkAsync(result, ct);
-    }
-
-    public class DeleteProductRequest
-    {
-        public Guid Id { get; set; }
     }
 }

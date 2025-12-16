@@ -1,10 +1,10 @@
 using FastEndpoints;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Product;
 
 namespace Modest.API.Endpoints.References.Product;
 
-public class GetProductByIdEndpoint(IProductService service)
-    : Endpoint<GetProductByIdEndpoint.GetProductByIdRequest, ProductDto>
+public class GetProductByIdEndpoint(IProductService service) : Endpoint<IdRequest, ProductDto>
 {
     public override void Configure()
     {
@@ -17,7 +17,7 @@ public class GetProductByIdEndpoint(IProductService service)
         });
     }
 
-    public override async Task HandleAsync(GetProductByIdRequest req, CancellationToken ct)
+    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
     {
         var product = await service.GetProductByIdAsync(req.Id);
         if (product is null)
@@ -27,10 +27,5 @@ public class GetProductByIdEndpoint(IProductService service)
         }
 
         await Send.OkAsync(product, ct);
-    }
-
-    public class GetProductByIdRequest
-    {
-        public Guid Id { get; set; }
     }
 }

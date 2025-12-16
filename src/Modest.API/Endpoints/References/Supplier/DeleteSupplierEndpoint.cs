@@ -1,10 +1,10 @@
 using FastEndpoints;
+using Modest.Core.Common.Models;
 using Modest.Core.Features.References.Supplier;
 
 namespace Modest.API.Endpoints.References.Supplier;
 
-public class DeleteSupplierEndpoint(ISupplierService service)
-    : Endpoint<DeleteSupplierEndpoint.DeleteSupplierRequest, bool>
+public class DeleteSupplierEndpoint(ISupplierService service) : Endpoint<IdRequest, bool>
 {
     public override void Configure()
     {
@@ -17,14 +17,9 @@ public class DeleteSupplierEndpoint(ISupplierService service)
         });
     }
 
-    public override async Task HandleAsync(DeleteSupplierRequest req, CancellationToken ct)
+    public override async Task HandleAsync(IdRequest req, CancellationToken ct)
     {
         var result = await service.DeleteSupplierAsync(req.Id);
         await Send.OkAsync(result, ct);
-    }
-
-    public class DeleteSupplierRequest
-    {
-        public Guid Id { get; set; }
     }
 }
