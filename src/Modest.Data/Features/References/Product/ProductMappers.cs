@@ -5,7 +5,7 @@ namespace Modest.Data.Features.References.Product;
 
 public static class ProductMappers
 {
-    public static ProductDto ToProductDto(this ProductEntity entity)
+    public static ProductDto ToDto(this ProductEntity entity)
     {
         return new ProductDto(
             entity.Id,

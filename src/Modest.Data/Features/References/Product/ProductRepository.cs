@@ -71,7 +71,7 @@ public class ProductRepository
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Limit(request.PageSize)
             .ToListAsync();
-        var dtos = items.Select(x => x.ToProductDto()).ToList();
+        var dtos = items.Select(x => x.ToDto()).ToList();
         return PaginationHelper.BuildResponse(
             dtos,
             (int)total,
@@ -107,7 +107,7 @@ public class ProductRepository
 
     public Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
-        return GetByIdAsync(id, entity => entity.ToProductDto());
+        return GetByIdAsync(id, entity => entity.ToDto());
     }
 
     public async Task<ProductDto> CreateProductAsync(ProductCreateDto productCreateDto, string code)
@@ -155,12 +155,12 @@ public class ProductRepository
                     }
                 );
                 await session.CommitTransactionAsync();
-                return duplicate.ToProductDto();
+                return duplicate.ToDto();
             }
 
             await Collection.InsertOneAsync(session, entity);
             await session.CommitTransactionAsync();
-            return entity.ToProductDto();
+            return entity.ToDto();
         }
         catch
         {
@@ -195,7 +195,7 @@ public class ProductRepository
         }
 
         await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
-        return entity.ToProductDto();
+        return entity.ToDto();
     }
 
     public async Task<bool> DeleteProductAsync(Guid id)
