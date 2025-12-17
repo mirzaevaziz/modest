@@ -187,15 +187,11 @@ public class ProductRepository
             .FirstOrDefaultAsync();
         if (duplicate is not null)
         {
-            if (!duplicate.IsDeleted)
-            {
-                throw new FluentValidation.ValidationException(
-                    "Product with the same FullName already exists."
-                );
-            }
-            // Rename deleted duplicate to avoid conflict
-            duplicate.Name += $" - Changed {DateTimeOffset.UtcNow}";
-            await Collection.ReplaceOneAsync(x => x.Id == duplicate.Id, duplicate);
+            throw new FluentValidation.ValidationException(
+                duplicate.IsDeleted
+                    ? "Product with the same FullName already exists in deleted state."
+                    : "Product with the same FullName already exists."
+            );
         }
 
         await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);

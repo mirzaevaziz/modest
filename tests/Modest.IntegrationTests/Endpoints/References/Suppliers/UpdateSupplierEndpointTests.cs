@@ -249,7 +249,7 @@ public class UpdateSupplierEndpointTests(WebFixture webFixture) : IntegrationTes
     }
 
     [Fact]
-    public async Task Given_DeletedDuplicate_When_Updating_Then_ReturnsOkAndRenamesDeletedAsync()
+    public async Task Given_DeletedDuplicate_When_Updating_Then_ReturnsBadRequestAsync()
     {
         // Arrange: create two suppliers using the service
         var supplierService = AlbaHost.Services.GetRequiredService<ISupplierService>();
@@ -262,7 +262,7 @@ public class UpdateSupplierEndpointTests(WebFixture webFixture) : IntegrationTes
         );
         await supplierRepository.DeleteSupplierAsync(entity1.Id);
 
-        // Act: Update entity2 to have the same name as deleted entity1
+        // Act: Try to update entity2 to have the same name as deleted entity1 (should fail)
         var updateDto = new SupplierUpdateDto(
             entity2.Id,
             entity1.Name,
@@ -274,32 +274,30 @@ public class UpdateSupplierEndpointTests(WebFixture webFixture) : IntegrationTes
         var updateResp = await AlbaHost.Scenario(api =>
         {
             api.Put.Json(updateDto).ToUrl($"/api/references/suppliers");
-            api.StatusCodeShouldBe(HttpStatusCode.OK);
+            api.StatusCodeShouldBe(HttpStatusCode.BadRequest);
         });
 
-        // Assert: Deleted supplier (entity1) should be renamed with timestamp
+        // Assert: Deleted supplier (entity1) should remain unchanged
         var deletedSupplier = await supplierRepository.GetSupplierByIdAsync(entity1.Id);
         deletedSupplier.Should().NotBeNull();
-        deletedSupplier!.Name.Should().StartWith(entity1.Name + " - Changed ");
-        deletedSupplier.Name.Should().NotBe(entity1.Name); // Name should be different due to timestamp
-        deletedSupplier.Name.Length.Should().BeGreaterThan(entity1.Name.Length + 11); // " - Changed " + timestamp
+        deletedSupplier!.Name.Should().Be(entity1.Name);
         deletedSupplier.ContactPerson.Should().Be(entity1.ContactPerson);
         deletedSupplier.Phone.Should().Be(entity1.Phone);
         deletedSupplier.Email.Should().Be(entity1.Email);
         deletedSupplier.Address.Should().Be(entity1.Address);
-        deletedSupplier.IsDeleted.Should().BeTrue(); // Should remain deleted
+        deletedSupplier.IsDeleted.Should().BeTrue();
         deletedSupplier.DeletedAt.Should().NotBeNull();
         deletedSupplier.DeletedBy.Should().NotBeEmpty();
 
-        // Assert: Updated supplier (entity2) should have the new name
-        var updatedSupplier = await supplierRepository.GetSupplierByIdAsync(entity2.Id);
-        updatedSupplier.Should().NotBeNull();
-        updatedSupplier!.Name.Should().Be(entity1.Name);
-        updatedSupplier.ContactPerson.Should().Be("Updated Contact");
-        updatedSupplier.Phone.Should().Be("+999");
-        updatedSupplier.Email.Should().Be("updated@test.com");
-        updatedSupplier.Address.Should().Be("Updated Address");
-        updatedSupplier.IsDeleted.Should().BeFalse();
-        updatedSupplier.DeletedAt.Should().BeNull();
+        // Assert: Supplier entity2 should remain unchanged
+        var unchangedSupplier = await supplierRepository.GetSupplierByIdAsync(entity2.Id);
+        unchangedSupplier.Should().NotBeNull();
+        unchangedSupplier!.Name.Should().Be("Supplier Two");
+        unchangedSupplier.ContactPerson.Should().Be("Contact 2");
+        unchangedSupplier.Phone.Should().Be("+222");
+        unchangedSupplier.Email.Should().Be("two@test.com");
+        unchangedSupplier.Address.Should().Be("Address 2");
+        unchangedSupplier.IsDeleted.Should().BeFalse();
+        unchangedSupplier.DeletedAt.Should().BeNull();
     }
 }

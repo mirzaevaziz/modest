@@ -117,7 +117,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
     }
 
     [Fact]
-    public async Task Given_DeletedDuplicate_When_Updating_Then_ReturnsOkAndRenamesDeletedAsync()
+    public async Task Given_DeletedDuplicate_When_Updating_Then_ReturnsBadRequestAsync()
     {
         // Arrange: create two products using the service
         var productService = AlbaHost.Services.GetRequiredService<IProductService>();
@@ -130,9 +130,7 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
         );
         await productRepository.DeleteProductAsync(entity1.Id);
 
-        var beforeUpdate = DateTime.UtcNow;
-
-        // Act: Update entity2 to have the same FullName as deleted entity1
+        // Act: Try to update entity2 to have the same FullName as deleted entity1 (should fail)
         var updateDto = new ProductUpdateDto(
             entity2.Id,
             entity1.Name,
@@ -143,29 +141,27 @@ public class UpdateProductEndpointTests(WebFixture webFixture) : IntegrationTest
         var updateResp = await AlbaHost.Scenario(api =>
         {
             api.Put.Json(updateDto).ToUrl($"/api/references/products");
-            api.StatusCodeShouldBe(HttpStatusCode.OK);
+            api.StatusCodeShouldBe(HttpStatusCode.BadRequest);
         });
 
-        // Assert: Deleted product (entity1) should be renamed with timestamp
+        // Assert: Deleted product (entity1) should remain unchanged
         var deletedProduct = await productRepository.GetProductByIdAsync(entity1.Id);
         deletedProduct.Should().NotBeNull();
-        deletedProduct!.Name.Should().StartWith(entity1.Name + " - Changed ");
-        deletedProduct.Name.Should().NotBe(entity1.Name); // Name should be different due to timestamp
-        deletedProduct.Name.Length.Should().BeGreaterThan(entity1.Name.Length + 11); // " - Changed " + timestamp
+        deletedProduct!.Name.Should().Be(entity1.Name);
         deletedProduct.Manufacturer.Should().Be(entity1.Manufacturer);
         deletedProduct.Country.Should().Be(entity1.Country);
-        deletedProduct.IsDeleted.Should().BeTrue(); // Should remain deleted
+        deletedProduct.IsDeleted.Should().BeTrue();
         deletedProduct.DeletedAt.Should().NotBeNull();
         deletedProduct.DeletedBy.Should().NotBeEmpty();
 
-        // Assert: Updated product (entity2) should have the new FullName
-        var updatedProduct = await productRepository.GetProductByIdAsync(entity2.Id);
-        updatedProduct.Should().NotBeNull();
-        updatedProduct!.Name.Should().Be(entity1.Name);
-        updatedProduct.Manufacturer.Should().Be(entity1.Manufacturer);
-        updatedProduct.Country.Should().Be(entity1.Country);
-        updatedProduct.IsDeleted.Should().BeFalse();
-        updatedProduct.DeletedAt.Should().BeNull();
+        // Assert: Product entity2 should remain unchanged
+        var unchangedProduct = await productRepository.GetProductByIdAsync(entity2.Id);
+        unchangedProduct.Should().NotBeNull();
+        unchangedProduct!.Name.Should().Be("Name2");
+        unchangedProduct.Manufacturer.Should().Be("Man2");
+        unchangedProduct.Country.Should().Be("Land2");
+        unchangedProduct.IsDeleted.Should().BeFalse();
+        unchangedProduct.DeletedAt.Should().BeNull();
     }
 
     [Theory]

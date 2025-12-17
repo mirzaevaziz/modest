@@ -22,7 +22,7 @@ This project uses [Beads](https://github.com/mirzaevaziz/modest/) for issue trac
 ### Issue Workflow
 
 1. Query issues: `bd list` or `bd ready` for ready-to-work items
-2. Start work on an issue: `bd update <issue-id> --status in-progress`
+2. Start work on an issue: `bd update <issue-id> --status in_progress`
 3. Complete the implementation
 4. **Quality Assurance Process (MANDATORY before commit):**
    - Build the project: `dotnet build --no-incremental`
