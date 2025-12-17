@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Utils.SequenceNumber;
 using Modest.Core.Helpers;
@@ -59,8 +60,10 @@ public class SupplierService(
         ValidationHelper.ValidateAndThrow(supplierCreateDto, serviceProvider);
 
         // Generate supplier code using sequence service
-        var sequenceNumber = await sequenceNumberService.GetNextAsync("suppliers");
-        var code = $"SUP-{sequenceNumber:D6}"; // Format: SUP-000001
+        var sequenceNumber = await sequenceNumberService.GetNextAsync(
+            Constants.SupplierSequenceKey
+        );
+        var code = $"{Constants.SupplierCodePrefix}{sequenceNumber:D6}"; // Format: SUP-000001
 
         var entity = await supplierRepository.CreateSupplierAsync(supplierCreateDto, code);
 

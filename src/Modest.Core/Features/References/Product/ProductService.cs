@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Utils.SequenceNumber;
 using Modest.Core.Helpers;
@@ -77,8 +78,8 @@ public class ProductService(
         ValidationHelper.ValidateAndThrow(productCreateDto, serviceProvider);
 
         // Generate product code using sequence service
-        var sequenceNumber = await sequenceNumberService.GetNextAsync("products");
-        var code = $"SKU-{sequenceNumber:D6}"; // Format: SKU-000001
+        var sequenceNumber = await sequenceNumberService.GetNextAsync(Constants.ProductSequenceKey);
+        var code = $"{Constants.ProductCodePrefix}{sequenceNumber:D6}"; // Format: SKU-000001
 
         var entity = await productRepository.CreateProductAsync(productCreateDto, code);
 
