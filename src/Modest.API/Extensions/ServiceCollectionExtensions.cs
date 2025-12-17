@@ -1,11 +1,9 @@
-﻿using FluentValidation;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using FluentValidation;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using Modest.Core.Features.References.Supplier;
 using Modest.Core.Features.Utils.SequenceNumber;
+using Modest.Data;
 using Modest.Data.Common;
 using Modest.Data.Features.References.Product;
 using Modest.Data.Features.References.Supplier;
@@ -16,17 +14,34 @@ using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
-namespace Modest.Data;
+namespace Modest.API.Extensions;
 
-public static class DependencyInjection
+public static class ServiceCollectionExtensions
 {
-    public static void AddDataServices(this IHostApplicationBuilder builder)
+    public static IServiceCollection AddCoreServices(this IServiceCollection services)
+    {
+        // Register services
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<ISequenceNumberService, SequenceNumberService>();
+
+        // Register validators from Modest.Core assembly
+        services.AddValidatorsFromAssemblyContaining<ProductService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddDataServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment
+    )
     {
         var settings =
-            builder.Configuration.GetSection("DbConnectionSettings").Get<DbConnectionSettings>()
+            configuration.GetSection("DbConnectionSettings").Get<DbConnectionSettings>()
             ?? throw new InvalidOperationException("DbConnectionSettings is not provided.");
 
-        if (!builder.Environment.IsEnvironment("IntegrationTest"))
+        if (!environment.IsEnvironment("IntegrationTest"))
         {
             if (
                 string.IsNullOrWhiteSpace(settings.ConnectionString)
@@ -37,23 +52,18 @@ public static class DependencyInjection
             }
 
             // Register IMongoDatabase
-            builder.Services.AddSingleton<IMongoClient>(sp => new MongoClient(
-                settings.ConnectionString
-            ));
-            builder.Services.AddScoped(sp =>
+            services.AddSingleton<IMongoClient>(sp => new MongoClient(settings.ConnectionString));
+            services.AddScoped(sp =>
                 sp.GetRequiredService<IMongoClient>().GetDatabase(settings.DatabaseName)
             );
         }
 
         // Register current user provider
-        builder.Services.AddScoped<ICurrentUserProvider, DefaultCurrentUserProvider>();
+        services.AddScoped<ICurrentUserProvider, DefaultCurrentUserProvider>();
 
-        builder.Services.AddScoped<IProductRepository, ProductRepository>();
-        builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
-        builder.Services.AddScoped<ISequenceNumberRepository, SequenceNumberRepository>();
-
-        // Register validators from the current assembly
-        builder.Services.AddValidatorsFromAssemblyContaining<ProductRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<ISupplierRepository, SupplierRepository>();
+        services.AddScoped<ISequenceNumberRepository, SequenceNumberRepository>();
 
         // Configure MongoDB conventions
         var conventionPack = new ConventionPack
@@ -65,5 +75,7 @@ public static class DependencyInjection
         ConventionRegistry.Register("IgnoreExtraElements", conventionPack, type => true);
 
         BsonSerializer.RegisterSerializer(new GuidSerializer(BsonType.String));
+
+        return services;
     }
 }

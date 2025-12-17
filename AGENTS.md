@@ -32,8 +32,12 @@ This project uses [Beads](https://github.com/mirzaevaziz/modest/) for issue trac
    - Format all changed files
    - Build and test again to verify optimizations didn't break anything
    - Only after second successful test pass, offer to commit and close
-5. Close the issue: `bd close <issue-id>`
-6. Commit changes with issue reference in commit message
+5. **IMPORTANT: Always ask user for permission before closing an issue**
+   - After QA passes, ask: "Should I close issue modest-xyz now?"
+   - Wait for user confirmation before running `bd close modest-xyz`
+   - Never close issues automatically without explicit user approval
+6. Close the issue: `bd close modest-xyz` (only after user confirms)
+7. Commit changes with issue reference in commit message
 
 ### Commands Reference
 

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Modest.Core.Common;
 using Modest.Core.Common.Models;
@@ -28,7 +29,8 @@ public interface IProductService
 public class ProductService(
     IProductRepository productRepository,
     ISequenceNumberService sequenceNumberService,
-    IServiceProvider serviceProvider,
+    IValidator<ProductCreateDto> createValidator,
+    IValidator<ProductUpdateDto> updateValidator,
     ILogger<ProductService> logger
 ) : IProductService
 {
@@ -75,7 +77,7 @@ public class ProductService(
             productCreateDto.Country,
             null
         );
-        ValidationHelper.ValidateAndThrow(productCreateDto, serviceProvider);
+        ValidationHelper.ValidateAndThrow(productCreateDto, createValidator);
 
         // Generate product code using sequence service
         var sequenceNumber = await sequenceNumberService.GetNextAsync(Constants.ProductSequenceKey);
@@ -97,7 +99,7 @@ public class ProductService(
             productUpdateDto.Country,
             null
         );
-        ValidationHelper.ValidateAndThrow(productUpdateDto, serviceProvider);
+        ValidationHelper.ValidateAndThrow(productUpdateDto, updateValidator);
 
         var entity = await productRepository.UpdateProductAsync(productUpdateDto);
 

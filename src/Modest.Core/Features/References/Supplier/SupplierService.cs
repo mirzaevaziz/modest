@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Modest.Core.Common;
 using Modest.Core.Common.Models;
@@ -24,7 +25,8 @@ public interface ISupplierService
 public class SupplierService(
     ISupplierRepository supplierRepository,
     ISequenceNumberService sequenceNumberService,
-    IServiceProvider serviceProvider,
+    IValidator<SupplierCreateDto> createValidator,
+    IValidator<SupplierUpdateDto> updateValidator,
     ILogger<SupplierService> logger
 ) : ISupplierService
 {
@@ -57,7 +59,7 @@ public class SupplierService(
             supplierCreateDto.Phone,
             null
         );
-        ValidationHelper.ValidateAndThrow(supplierCreateDto, serviceProvider);
+        ValidationHelper.ValidateAndThrow(supplierCreateDto, createValidator);
 
         // Generate supplier code using sequence service
         var sequenceNumber = await sequenceNumberService.GetNextAsync(
@@ -81,7 +83,7 @@ public class SupplierService(
             supplierUpdateDto.Phone,
             null
         );
-        ValidationHelper.ValidateAndThrow(supplierUpdateDto, serviceProvider);
+        ValidationHelper.ValidateAndThrow(supplierUpdateDto, updateValidator);
 
         var entity = await supplierRepository.UpdateSupplierAsync(supplierUpdateDto);
 

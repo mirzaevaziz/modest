@@ -3,9 +3,8 @@ using FastEndpoints;
 using FastEndpoints.Swagger;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Modest.API.Extensions;
 using Modest.API.Handlers;
-using Modest.Core;
-using Modest.Data;
 using Serilog;
 using Serilog.Events;
 
@@ -40,8 +39,8 @@ builder
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.AddCoreServices();
-builder.AddDataServices();
+builder.Services.AddCoreServices();
+builder.Services.AddDataServices(builder.Configuration, builder.Environment);
 
 // Register the API exception handler
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
