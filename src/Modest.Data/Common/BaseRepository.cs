@@ -1,9 +1,9 @@
-﻿using FluentValidation;
+﻿using System.Linq.Expressions;
+using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Helpers;
 using MongoDB.Driver;
-using System.Linq.Expressions;
 
 namespace Modest.Data.Common;
 
