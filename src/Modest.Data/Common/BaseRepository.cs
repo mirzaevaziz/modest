@@ -1,13 +1,13 @@
-using System.Linq.Expressions;
-using FluentValidation;
+﻿using FluentValidation;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Helpers;
 using MongoDB.Driver;
+using System.Linq.Expressions;
 
 namespace Modest.Data.Common;
 
-public abstract class BaseRepository<TEntity, TDto, TCreateDto, TUpdateDto, TFilter>
+public abstract class BaseRepository<TEntity, TDto, TFilter>
     where TEntity : AuditableEntity, ICodeEntity
     where TFilter : class
 {
@@ -144,5 +144,20 @@ public abstract class BaseRepository<TEntity, TDto, TCreateDto, TUpdateDto, TFil
         }
 
         return filter;
+    }
+
+    protected async Task RestoreDeletedEntityAsync(
+        IClientSessionHandle session,
+        TEntity entity,
+        Action<TEntity> updateFields
+    )
+    {
+        entity.IsDeleted = false;
+        entity.DeletedAt = null;
+        entity.DeletedBy = null;
+        updateFields(entity);
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
+        entity.UpdatedBy = CurrentUserProvider.GetCurrentUsername();
+        await Collection.ReplaceOneAsync(session, x => x.Id == entity.Id, entity);
     }
 }

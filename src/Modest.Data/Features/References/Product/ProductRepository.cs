@@ -1,15 +1,15 @@
-using System.Linq.Expressions;
-using Modest.Core.Common.Models;
+﻿using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using Modest.Core.Helpers;
 using Modest.Data.Common;
 using MongoDB.Driver;
+using System.Linq.Expressions;
 
 namespace Modest.Data.Features.References.Product;
 
 public class ProductRepository
-    : BaseRepository<ProductEntity, ProductDto, ProductCreateDto, ProductUpdateDto, ProductFilter>,
+    : BaseRepository<ProductEntity, ProductDto, ProductFilter>,
         IProductRepository
 {
     private const string CollectionName = "product";
@@ -143,17 +143,18 @@ public class ProductRepository
                         "Product with the same FullName already exists."
                     );
                 }
-                // Restore deleted duplicate
-                duplicate.IsDeleted = false;
-                duplicate.DeletedAt = null;
-                duplicate.DeletedBy = null;
-                duplicate.Name = productCreateDto.Name;
-                duplicate.Manufacturer = productCreateDto.Manufacturer;
-                duplicate.Country = productCreateDto.Country;
-                duplicate.PieceCountInUnit = productCreateDto.PieceCountInUnit;
-                duplicate.UpdatedAt = DateTimeOffset.UtcNow;
-                duplicate.UpdatedBy = currentUser;
-                await Collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
+
+                await RestoreDeletedEntityAsync(
+                    session,
+                    duplicate,
+                    e =>
+                    {
+                        e.Name = productCreateDto.Name;
+                        e.Manufacturer = productCreateDto.Manufacturer;
+                        e.Country = productCreateDto.Country;
+                        e.PieceCountInUnit = productCreateDto.PieceCountInUnit;
+                    }
+                );
                 await session.CommitTransactionAsync();
                 return duplicate.ToProductDto();
             }

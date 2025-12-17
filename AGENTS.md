@@ -22,10 +22,18 @@ This project uses [Beads](https://github.com/mirzaevaziz/modest/) for issue trac
 ### Issue Workflow
 
 1. Query issues: `bd list` or `bd ready` for ready-to-work items
-2. Start work on an issue (consider updating status to "in-progress")
-3. Complete the implementation and tests
-4. Close the issue: `bd close <issue-id>`
-5. Commit changes with issue reference in commit message
+2. Start work on an issue: `bd update <issue-id> --status in-progress`
+3. Complete the implementation
+4. **Quality Assurance Process (MANDATORY before commit):**
+   - Build the project: `dotnet build --no-incremental`
+   - Run all tests: `dotnet test --no-build`
+   - If tests pass: Review code for optimization opportunities
+   - Remove any redundant code
+   - Format all changed files
+   - Build and test again to verify optimizations didn't break anything
+   - Only after second successful test pass, offer to commit and close
+5. Close the issue: `bd close <issue-id>`
+6. Commit changes with issue reference in commit message
 
 ### Commands Reference
 

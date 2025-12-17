@@ -1,4 +1,4 @@
-using Modest.Core.Common.Models;
+﻿using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Supplier;
 using Modest.Core.Helpers;
@@ -8,13 +8,7 @@ using MongoDB.Driver;
 namespace Modest.Data.Features.References.Supplier;
 
 public class SupplierRepository
-    : BaseRepository<
-        SupplierEntity,
-        SupplierDto,
-        SupplierCreateDto,
-        SupplierUpdateDto,
-        SupplierFilter
-    >,
+    : BaseRepository<SupplierEntity, SupplierDto, SupplierFilter>,
         ISupplierRepository
 {
     private const string CollectionName = "supplier";
@@ -126,18 +120,19 @@ public class SupplierRepository
                         "Supplier with the same name already exists."
                     );
                 }
-                // Restore deleted duplicate
-                duplicate.IsDeleted = false;
-                duplicate.DeletedAt = null;
-                duplicate.DeletedBy = null;
-                duplicate.Name = supplierCreateDto.Name;
-                duplicate.ContactPerson = supplierCreateDto.ContactPerson;
-                duplicate.Phone = supplierCreateDto.Phone;
-                duplicate.Email = supplierCreateDto.Email;
-                duplicate.Address = supplierCreateDto.Address;
-                duplicate.UpdatedAt = DateTimeOffset.UtcNow;
-                duplicate.UpdatedBy = currentUser;
-                await Collection.ReplaceOneAsync(session, x => x.Id == duplicate.Id, duplicate);
+
+                await RestoreDeletedEntityAsync(
+                    session,
+                    duplicate,
+                    e =>
+                    {
+                        e.Name = supplierCreateDto.Name;
+                        e.ContactPerson = supplierCreateDto.ContactPerson;
+                        e.Phone = supplierCreateDto.Phone;
+                        e.Email = supplierCreateDto.Email;
+                        e.Address = supplierCreateDto.Address;
+                    }
+                );
                 await session.CommitTransactionAsync();
                 return duplicate.ToDto();
             }
