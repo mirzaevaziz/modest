@@ -1,5 +1,4 @@
-﻿using Modest.Core.Common;
-using Modest.Core.Common.Models;
+﻿using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Supplier;
 using Modest.Core.Helpers;
@@ -14,12 +13,8 @@ public class SupplierRepository
 {
     private const string CollectionName = "supplier";
 
-    public SupplierRepository(
-        IMongoDatabase database,
-        ICurrentUserProvider currentUserProvider,
-        ITimeProvider timeProvider
-    )
-        : base(database, CollectionName, currentUserProvider, timeProvider) { }
+    public SupplierRepository(IMongoDatabase database, ICurrentUserProvider currentUserProvider)
+        : base(database, CollectionName, currentUserProvider) { }
 
     protected override void EnsureIndexes()
     {
@@ -109,8 +104,8 @@ public class SupplierRepository
                 Phone = supplierCreateDto.Phone,
                 Email = supplierCreateDto.Email,
                 Address = supplierCreateDto.Address,
-                CreatedAt = TimeProvider.UtcNow,
-                UpdatedAt = TimeProvider.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = currentUser,
                 UpdatedBy = currentUser,
                 IsDeleted = false,
@@ -165,7 +160,7 @@ public class SupplierRepository
         entity.Phone = supplierUpdateDto.Phone;
         entity.Email = supplierUpdateDto.Email;
         entity.Address = supplierUpdateDto.Address;
-        entity.UpdatedAt = TimeProvider.UtcNow;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedBy = currentUser;
         var duplicate = await Collection
             .Find(x => x.Name == entity.Name && x.Id != entity.Id)
@@ -193,7 +188,7 @@ public class SupplierRepository
         }
 
         entity.IsDeleted = true;
-        entity.DeletedAt = TimeProvider.UtcNow;
+        entity.DeletedAt = DateTimeOffset.UtcNow;
         entity.DeletedBy = currentUser;
         var result = await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;

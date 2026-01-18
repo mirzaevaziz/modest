@@ -1,5 +1,4 @@
-﻿using Modest.Core.Common;
-using Modest.Core.Common.Models;
+﻿using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using Modest.Core.Helpers;
@@ -14,12 +13,8 @@ public class ProductRepository
 {
     private const string CollectionName = "product";
 
-    public ProductRepository(
-        IMongoDatabase database,
-        ICurrentUserProvider currentUserProvider,
-        ITimeProvider timeProvider
-    )
-        : base(database, CollectionName, currentUserProvider, timeProvider) { }
+    public ProductRepository(IMongoDatabase database, ICurrentUserProvider currentUserProvider)
+        : base(database, CollectionName, currentUserProvider) { }
 
     protected override void EnsureIndexes()
     {
@@ -129,8 +124,8 @@ public class ProductRepository
                 Manufacturer = productCreateDto.Manufacturer,
                 Country = productCreateDto.Country,
                 PieceCountInUnit = productCreateDto.PieceCountInUnit,
-                CreatedAt = TimeProvider.UtcNow,
-                UpdatedAt = TimeProvider.UtcNow,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
                 CreatedBy = currentUser,
                 UpdatedBy = currentUser,
                 IsDeleted = false,
@@ -185,7 +180,7 @@ public class ProductRepository
         entity.Manufacturer = productUpdateDto.Manufacturer;
         entity.Country = productUpdateDto.Country;
         entity.PieceCountInUnit = productUpdateDto.PieceCountInUnit;
-        entity.UpdatedAt = TimeProvider.UtcNow;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedBy = currentUser;
         var duplicate = await Collection
             .Find(x => x.FullName == entity.FullName && x.Id != entity.Id)
@@ -213,7 +208,7 @@ public class ProductRepository
         }
 
         entity.IsDeleted = true;
-        entity.DeletedAt = TimeProvider.UtcNow;
+        entity.DeletedAt = DateTimeOffset.UtcNow;
         entity.DeletedBy = currentUser;
         var result = await Collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         return result.ModifiedCount > 0;

@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using FluentValidation;
-using Modest.Core.Common;
 using Modest.Core.Common.Models;
 using Modest.Core.Features.Auth;
 using Modest.Core.Helpers;
@@ -14,18 +13,15 @@ public abstract class BaseRepository<TEntity, TDto, TFilter>
 {
     protected IMongoCollection<TEntity> Collection { get; }
     protected ICurrentUserProvider CurrentUserProvider { get; }
-    protected ITimeProvider TimeProvider { get; }
 
     protected BaseRepository(
         IMongoDatabase database,
         string collectionName,
-        ICurrentUserProvider currentUserProvider,
-        ITimeProvider timeProvider
+        ICurrentUserProvider currentUserProvider
     )
     {
         Collection = database.GetCollection<TEntity>(collectionName);
         CurrentUserProvider = currentUserProvider;
-        TimeProvider = timeProvider;
         EnsureIndexes();
     }
 
@@ -160,7 +156,7 @@ public abstract class BaseRepository<TEntity, TDto, TFilter>
         entity.DeletedAt = null;
         entity.DeletedBy = null;
         updateFields(entity);
-        entity.UpdatedAt = TimeProvider.UtcNow;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
         entity.UpdatedBy = CurrentUserProvider.GetCurrentUsername();
         await Collection.ReplaceOneAsync(session, x => x.Id == entity.Id, entity);
     }

@@ -11,15 +11,6 @@ This project uses [Beads](https://github.com/mirzaevaziz/modest/) for issue trac
 - Set appropriate priority levels (0 = high, 1 = medium, 2 = low)
 - Add relevant labels (e.g., "bug", "feature", "refactoring", "DRY")
 
-#### Required Issue Content
-
-All issues must include:
-
-
-- **Acceptance criteria** - Clear, testable conditions that define when the issue is complete
-- **Steps to reproduce or solve** - Detailed steps to either reproduce a bug or implement a solution
-- **Files list to review** - Specific files that need to be modified, reviewed, or tested
-
 ### Working with Issues
 
 - Use `bd list` to see all open issues
