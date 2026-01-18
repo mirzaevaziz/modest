@@ -1,4 +1,5 @@
 using FluentValidation;
+using Modest.Core.Common;
 using Modest.Core.Features.Auth;
 using Modest.Core.Features.References.Product;
 using Modest.Core.Features.References.Supplier;
@@ -20,6 +21,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCoreServices(this IServiceCollection services)
     {
+        // Register time provider
+        services.AddSingleton<ITimeProvider, SystemTimeProvider>();
+
         // Register services
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ISupplierService, SupplierService>();
