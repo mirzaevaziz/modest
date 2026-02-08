@@ -15,7 +15,6 @@ public static class SupplierMappers
             CreatedBy: entity.CreatedBy,
             UpdatedBy: entity.UpdatedBy,
             DeletedBy: entity.DeletedBy,
-            Code: entity.Code,
             Name: entity.Name,
             ContactPerson: entity.ContactPerson,
             Phone: entity.Phone,
@@ -26,6 +25,6 @@ public static class SupplierMappers
 
     public static SupplierLookupDto ToDto(this SupplierLookupEntity entity)
     {
-        return new SupplierLookupDto(Id: entity.Id, Name: entity.Name, Code: entity.Code);
+        return new SupplierLookupDto(Id: entity.Id, Name: entity.Name);
     }
 }

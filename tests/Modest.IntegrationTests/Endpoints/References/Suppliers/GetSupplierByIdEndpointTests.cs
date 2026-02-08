@@ -34,7 +34,6 @@ public class GetSupplierByIdEndpointTests(WebFixture webFixture) : IntegrationTe
         result.Phone.Should().Be("+123456");
         result.Email.Should().Be("test@test.com");
         result.Address.Should().Be("123 St");
-        result.Code.Should().MatchRegex(@"^SUP-\d{6}$");
         result.IsDeleted.Should().BeFalse();
         result.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
         result.UpdatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
@@ -78,7 +77,6 @@ public class GetSupplierByIdEndpointTests(WebFixture webFixture) : IntegrationTe
         result.Phone.Should().BeNull();
         result.Email.Should().BeNull();
         result.Address.Should().BeNull();
-        result.Code.Should().MatchRegex(@"^SUP-\d{6}$");
         result.IsDeleted.Should().BeFalse();
     }
 

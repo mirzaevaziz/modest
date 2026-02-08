@@ -43,7 +43,6 @@ public class GetAllSuppliersEndpointTests(WebFixture webFixture) : IntegrationTe
         var first = result.Items.First();
         first.Id.Should().NotBeEmpty();
         first.Name.Should().NotBeNullOrEmpty();
-        first.Code.Should().MatchRegex(@"^SUP-\d{6}$");
         first.IsDeleted.Should().BeFalse();
         first.CreatedAt.Should().NotBeNull();
         first.UpdatedAt.Should().NotBeNull();

@@ -75,8 +75,6 @@ public class CreateSupplierEndpointTests(WebFixture mongoDbFixture)
         result.Phone.Should().Be("+1234567890");
         result.Email.Should().Be("test@example.com");
         result.Address.Should().Be("123 Test St");
-        result.Code.Should().StartWith("SUP-");
-        result.Code.Should().MatchRegex(@"^SUP-\d{6}$");
         result.IsDeleted.Should().BeFalse();
         result.CreatedAt.Should().NotBeNull();
         result.CreatedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
@@ -110,7 +108,6 @@ public class CreateSupplierEndpointTests(WebFixture mongoDbFixture)
         result.Phone.Should().BeNull();
         result.Email.Should().BeNull();
         result.Address.Should().BeNull();
-        result.Code.Should().StartWith("SUP-");
         result.IsDeleted.Should().BeFalse();
         result.CreatedAt.Should().NotBeNull();
         result.UpdatedAt.Should().NotBeNull();
@@ -172,7 +169,6 @@ public class CreateSupplierEndpointTests(WebFixture mongoDbFixture)
         result.Email.Should().Be("new@test.com");
         result.Address.Should().Be("New Address");
         result.IsDeleted.Should().BeFalse();
-        result.Code.Should().Be(created.Code); // Code should remain the same
         result.DeletedAt.Should().BeNull();
         result.DeletedBy.Should().BeNull();
         result.UpdatedAt.Should().NotBeNull();
@@ -264,8 +260,7 @@ public class CreateSupplierEndpointTests(WebFixture mongoDbFixture)
         var result1 = await resp1.ReadAsJsonAsync<SupplierDto>();
         var result2 = await resp2.ReadAsJsonAsync<SupplierDto>();
 
-        result1!.Code.Should().NotBe(result2!.Code);
-        result1.Code.Should().MatchRegex(@"^SUP-\d{6}$");
-        result2.Code.Should().MatchRegex(@"^SUP-\d{6}$");
+        result1.Should().NotBeNull();
+        result2.Should().NotBeNull();
     }
 }

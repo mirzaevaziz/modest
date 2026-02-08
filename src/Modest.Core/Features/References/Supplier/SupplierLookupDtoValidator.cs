@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using static Modest.Core.Features.References.Supplier.SupplierConstants;
 
 namespace Modest.Core.Features.References.Supplier;
@@ -16,11 +16,5 @@ public class SupplierLookupDtoValidator : AbstractValidator<SupplierLookupDto>
             .WithMessage($"Supplier Name must be at least {NameMinLength} characters.")
             .MaximumLength(NameMaxLength)
             .WithMessage($"Supplier Name must not exceed {NameMaxLength} characters.");
-
-        RuleFor(x => x.Code)
-            .NotEmpty()
-            .WithMessage("Supplier Code is required.")
-            .MaximumLength(CodeMaxLength)
-            .WithMessage($"Supplier Code must not exceed {CodeMaxLength} characters.");
     }
 }

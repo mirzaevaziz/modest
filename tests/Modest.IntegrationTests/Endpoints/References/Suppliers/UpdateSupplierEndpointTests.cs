@@ -66,7 +66,6 @@ public class UpdateSupplierEndpointTests(WebFixture webFixture) : IntegrationTes
         updated.Phone.Should().Be("+9876543210");
         updated.Email.Should().Be("updated@example.com");
         updated.Address.Should().Be("456 New St");
-        updated.Code.Should().Be(entity.Code); // Code should remain unchanged
         updated.IsDeleted.Should().BeFalse();
         updated.CreatedAt.Should().Be(entity.CreatedAt); // CreatedAt should not change
         updated.UpdatedAt.Should().NotBeNull();

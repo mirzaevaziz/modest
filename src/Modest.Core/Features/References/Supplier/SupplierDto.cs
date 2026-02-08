@@ -1,4 +1,4 @@
-namespace Modest.Core.Features.References.Supplier;
+﻿namespace Modest.Core.Features.References.Supplier;
 
 public record SupplierDto(
     Guid Id,
@@ -9,7 +9,6 @@ public record SupplierDto(
     string? CreatedBy,
     string? UpdatedBy,
     string? DeletedBy,
-    string Code,
     string Name,
     string? ContactPerson,
     string? Phone,
