@@ -1,4 +1,5 @@
 using FluentValidation;
+using Modest.Core.Common;
 using Modest.Core.Features.References.Supplier;
 using static Modest.Core.Features.Documents.DocumentInboundDelivery.DocumentInboundDeliveryConstants;
 
@@ -7,7 +8,7 @@ namespace Modest.Core.Features.Documents.DocumentInboundDelivery;
 public class DocumentInboundDeliveryCreateDtoValidator
     : AbstractValidator<DocumentInboundDeliveryCreateDto>
 {
-    public DocumentInboundDeliveryCreateDtoValidator()
+    public DocumentInboundDeliveryCreateDtoValidator(ITimeProvider timeProvider)
     {
         RuleFor(x => x.Supplier)
             .NotNull()
@@ -22,7 +23,7 @@ public class DocumentInboundDeliveryCreateDtoValidator
             );
 
         RuleFor(x => x.SupplierDocumentDate)
-            .LessThanOrEqualTo(DateTimeOffset.UtcNow.AddDays(1))
+            .LessThanOrEqualTo(timeProvider.UtcNow.AddDays(1))
             .When(x => x.SupplierDocumentDate.HasValue)
             .WithMessage("Supplier Document Date cannot be in the future.");
 
