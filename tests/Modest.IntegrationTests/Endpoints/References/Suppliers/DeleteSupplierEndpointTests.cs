@@ -109,6 +109,7 @@ public class DeleteSupplierEndpointTests(WebFixture webFixture) : IntegrationTes
         deleted.Should().NotBeNull();
         deleted!.Id.Should().Be(entity.Id);
         deleted.Name.Should().Be("Full Data");
+        deleted.Code.Should().Be(entity.Code);
         deleted.ContactPerson.Should().Be("John Doe");
         deleted.Phone.Should().Be("+123");
         deleted.Email.Should().Be("test@example.com");

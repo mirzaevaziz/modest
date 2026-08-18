@@ -55,6 +55,7 @@ public class GetSupplierLookupEndpointTests(WebFixture webFixture) : Integration
         var first = result.Items[0];
         first.Id.Should().NotBeEmpty();
         first.Name.Should().NotBeNullOrEmpty();
+        first.Code.Should().MatchRegex(@"^SUP-\d{6}$");
     }
 
     [Fact]
@@ -182,6 +183,8 @@ public class GetSupplierLookupEndpointTests(WebFixture webFixture) : Integration
         var item = result.Items[0];
         item.Id.Should().Be(supplier.Id);
         item.Name.Should().Be("Test Supplier");
+        item.Code.Should().MatchRegex(@"^SUP-\d{6}$");
+        item.Code.Should().Be(supplier.Code);
     }
 
     [Fact]

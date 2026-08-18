@@ -82,7 +82,7 @@ public class SupplierRepository
         return GetLookupAsync(
             request,
             x => x.Name,
-            entity => new SupplierLookupDto(entity.Id, entity.Name)
+            entity => new SupplierLookupDto(entity.Id, entity.Name, entity.Code)
         );
     }
 
